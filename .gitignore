@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Test caches
+.pytest_cache/
+.hypothesis/
+
+# User runtime state (not template files — *.example.json IS committed)
+storage/users.json
+storage/plan.json
+storage/daily_state.json
+storage/workouts.json
+storage/progress.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Claude Code local state (orchestration, observability, etc.)
+.claude/

@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "goal": {
+    "race": "marathon",
+    "target_time_s": 14400,
+    "race_date": "2027-01-01",
+    "race_name": "Goal Marathon 2027"
+  },
+  "methodology": "polarized",
+  "macrocycle": {
+    "start_date": "2026-07-01",
+    "end_date": "2027-01-01",
+    "total_weeks": 24,
+    "phases": [
+      { "name": "base",  "start_week": 1,  "end_week": 10, "focus": "aerobic volume + strides" },
+      { "name": "build", "start_week": 11, "end_week": 18, "focus": "T + I development" },
+      { "name": "peak",  "start_week": 19, "end_week": 22, "focus": "marathon-specific T + M" },
+      { "name": "taper", "start_week": 23, "end_week": 24, "focus": "volume cut, intensity preserve" }
+    ]
+  },
+  "weeks": [
+    {
+      "week_number": 1,
+      "phase": "base",
+      "target_volume_min": 200,
+      "target_long_run_min": 60,
+      "days": [
+        { "date": "2026-07-01", "dow": "Tue", "type": "E",    "duration_min": 35, "target_pace": "easy",  "notes": "include 4x20s strides" },
+        { "date": "2026-07-03", "dow": "Thu", "type": "E",    "duration_min": 35, "target_pace": "easy",  "notes": "" },
+        { "date": "2026-07-05", "dow": "Sat", "type": "E",    "duration_min": 40, "target_pace": "easy",  "notes": "" },
+        { "date": "2026-07-06", "dow": "Sun", "type": "L",    "duration_min": 60, "target_pace": "easy",  "notes": "RPE-driven, do not check pace" },
+        { "date": "2026-06-30", "dow": "Mon", "type": "Rest", "duration_min": 0,  "target_pace": null,    "notes": "" },
+        { "date": "2026-07-02", "dow": "Wed", "type": "Rest", "duration_min": 0,  "target_pace": null,    "notes": "" },
+        { "date": "2026-07-04", "dow": "Fri", "type": "Rest", "duration_min": 0,  "target_pace": null,    "notes": "" }
+      ]
+    }
+  ],
+  "last_modified_at": "2026-07-01T10:00:00Z",
+  "last_modified_reason": "initial generation"
+}

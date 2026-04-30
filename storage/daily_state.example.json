@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "as_of_date": "2026-01-01",
+  "carry_forward": {
+    "warm_up_cue": "",
+    "fatigue_flag": "none",
+    "recurring_red_flags": []
+  },
+  "consecutive_misses": 0,
+  "consecutive_ahead": 0,
+  "last_workout_id": null,
+  "last_workout_quality": null
+}

@@ -1,0 +1,28 @@
+{
+  "description": "Hooks for running-coach plugin — session start reminder and plan integrity validation.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/unlogged-workouts.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/plan-integrity-check.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

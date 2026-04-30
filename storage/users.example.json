@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "user_id": "default",
+  "created_at": "2026-01-01T10:00:00Z",
+  "profile": {
+    "name": "Runner",
+    "age": 30,
+    "sex": "M",
+    "weight_kg": 70
+  },
+  "current_fitness": {
+    "vdot": 40,
+    "vdot_source": "5K time-trial",
+    "vdot_source_date": "2026-01-01",
+    "vdot_source_result": { "distance_m": 5000, "time_s": 1620 },
+    "paces": {
+      "easy_per_km_s": 360,
+      "marathon_per_km_s": 318,
+      "threshold_per_km_s": 300,
+      "interval_per_km_s": 276,
+      "repetition_per_km_s": 258
+    },
+    "weekly_mileage_baseline_km": 25
+  },
+  "preferences": {
+    "workout_unit": "time",
+    "methodology": "polarized",
+    "training_days": ["Tue", "Thu", "Sat", "Sun"],
+    "rest_days_sacred": true,
+    "long_run_day": "Sun",
+    "quality_days": ["Tue", "Sat"],
+    "language": "en"
+  },
+  "lifestyle": {
+    "typical_sleep_hours": 7,
+    "stress_level": "moderate",
+    "injury_history": [],
+    "constraints_notes": ""
+  },
+  "integrations": {
+    "strava": { "connected": false, "athlete_id": null }
+  }
+}

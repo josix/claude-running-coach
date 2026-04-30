@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "rolling_7d": {
+    "mileage_km": 0,
+    "duration_min": 0,
+    "avg_rpe": 0,
+    "quality_sessions_completed": 0,
+    "quality_sessions_prescribed": 0
+  },
+  "rolling_28d": {
+    "mileage_km": 0,
+    "vdot_trend": "0.0",
+    "avg_resting_signal": "stable"
+  },
+  "weekly_summaries": [],
+  "vdot_history": [],
+  "race_results": [],
+  "last_updated_at": "2026-01-01T00:00:00Z"
+}
