@@ -74,7 +74,29 @@ Stores the single user's profile, fitness baseline, training preferences, and in
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `strava` | object | `{ "connected": boolean, "athlete_id": string\|null }` — gates `/run-sync` availability |
+| `preferred_source` | string | `"manual"` \| `"strava"` \| `"garmin"`. Tiebreaker for same-date workouts arriving from multiple sources. Defaults to `"manual"`; flips to `"strava"` only after a successful probe via `probe-strava-connection`. |
+| `strava` | object | See Strava Object below. |
+| `garmin` | object | Reserved for v2 Garmin Connect integration. See Garmin Object below. |
+
+## Strava Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `connected` | boolean | `true` only after `probe-strava-connection` returns `ok`. Never set `true` from the `--connect` flag alone. |
+| `athlete_id` | integer\|null | Strava athlete numeric id, captured from `get-athlete` response. |
+| `connected_at` | string (ISO 8601)\|null | When the probe last succeeded. |
+| `last_sync_at` | string (ISO 8601)\|null | When DataFetcher last successfully ingested activities. |
+| `last_sync_status` | string\|null | `null` \| `"ok"` \| `"error:auth"` \| `"error:rate_limit"` \| `"error:mcp_unavailable"` \| `"error:network"` \| `"error:unknown"` |
+
+## Garmin Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `connected` | boolean | Reserved; not wired in v0.2.0. |
+| `user_id` | string\|null | Reserved. |
+| `connected_at` | string\|null | Reserved. |
+| `last_sync_at` | string\|null | Reserved. |
+| `last_sync_status` | string\|null | Reserved. |
 
 ## Written by
 

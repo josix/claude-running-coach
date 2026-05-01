@@ -5,7 +5,6 @@
       "id": "wkt-2026-01-01-001",
       "date": "2026-01-01",
       "source": "manual",
-      "strava_activity_id": null,
       "prescribed": {
         "type": "E",
         "duration_min": 35,
@@ -23,7 +22,8 @@
           { "km": 1, "pace_per_km_s": 365 },
           { "km": 2, "pace_per_km_s": 360 }
         ],
-        "notes": "felt good, legs fresh"
+        "notes": "felt good, legs fresh",
+        "strava_activity_id": null
       },
       "analysis": {
         "completion_pct": 100,

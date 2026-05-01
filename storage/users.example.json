@@ -38,6 +38,20 @@
     "constraints_notes": ""
   },
   "integrations": {
-    "strava": { "connected": false, "athlete_id": null }
+    "preferred_source": "manual",
+    "strava": {
+      "connected": false,
+      "athlete_id": null,
+      "connected_at": null,
+      "last_sync_at": null,
+      "last_sync_status": null
+    },
+    "garmin": {
+      "connected": false,
+      "user_id": null,
+      "connected_at": null,
+      "last_sync_at": null,
+      "last_sync_status": null
+    }
   }
 }

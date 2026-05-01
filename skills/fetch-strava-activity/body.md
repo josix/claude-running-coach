@@ -1,59 +1,82 @@
 # Fetch Strava Activity — Instructions
 
-## v1 Stub Behavior
+## Prerequisites
 
-Strava integration is planned for v2. When this skill is invoked in v1, return the following message and stop:
-
-> "Strava sync is coming in v2 — for now, use `/run-log` to manually record your workout. Your data will be preserved and fully compatible when Strava sync arrives."
-
-Do not attempt any MCP tool calls or file writes.
+- `users.json.integrations.strava.connected == true` — if false, abort with a prompt to run `/run-init --connect strava`.
+- `mcp__strava__get-recent-activities` available in tool list (and `mcp__strava__get-all-activities` if a date-range query is needed for `--days > 1`).
 
 ---
 
-## v2 Full Implementation (reference — do not implement in v1)
+## Normalization
 
-### Inputs
+Field mapping is implemented in `scripts/strava_normalize.py` — call `normalize_activity(activity_dict)` on each Strava activity. You do not need to perform field mapping manually; the Python helper handles all transforms and filters.
 
-- `--days N`: lookback window in days (from `/run-sync --days N`; default 1).
-- `storage/users.json`: `integrations.strava.connected` must be `true`.
-- `storage/workouts.json`: existing entries to deduplicate against.
-- `storage/plan.json`: prescribed workouts for date lookup.
+The helper returns `None` to skip if:
+- `sport_type` / `type` is not in `{Run, TrailRun, VirtualRun}` — skip silently
+- `moving_time` < 300 seconds (< 5 min) — skip silently
+- `distance == 0` or missing — skip silently
 
-### Steps
+On a successful return, the dict contains: `duration_min`, `distance_km`, `avg_pace_per_km_s`, `avg_hr`, `max_hr`, `rpe`, `splits`, `notes`, `strava_activity_id`.
 
-1. Check `users.json.integrations.strava.connected`. If `false`, abort with: "Strava not connected. Run `/run-init --connect strava` to set up the integration."
-2. Call the Strava MCP tool (discover tool name at runtime — expected: `mcp__strava-mcp__get-recent-activities` or similar) with `days=N`.
-3. Filter returned activities: keep only `type == "Run"`. Skip Walk, Hike, Ride, etc.
-4. For each Run activity, normalize fields:
+---
 
-   | Strava field | Internal field | Transform |
-   |---|---|---|
-   | `distance` (m) | `distance_km` | ÷ 1000 |
-   | `moving_time` (s) | `duration_min` | ÷ 60 |
-   | `average_speed` (m/s) | `avg_pace_per_km_s` | `1000 / average_speed` |
-   | `average_heartrate` | `avg_hr` | direct |
-   | `max_heartrate` | `max_hr` | direct |
-   | `splits_metric[].average_speed` | `splits[].pace_per_km_s` | `1000 / avg_speed` |
-   | `splits_metric[].average_heartrate` | `splits[].avg_hr` | direct |
-   | `description` | `notes` | parse "RPE: N" or "feeling: N/10" patterns |
-   | `id` | `strava_activity_id` | direct |
+## Deduplication
 
-5. Deduplicate: check `workouts.json` for any existing entry with matching `strava_activity_id`. Skip duplicates.
-6. For each new activity, look up the prescribed workout for `activity.start_date_local` from `plan.json`.
-7. Call `analyze-workout` with actual + prescribed dicts.
-8. Append normalized workout record to `workouts.json` (read-modify-write).
-9. Call `adapt-plan` with the analysis delta.
-10. Report to user: "Synced {N} new activities. {summary of verdicts}."
+Use `is_duplicate(workouts, source, source_activity_id)` from `strava_normalize.py` to check if an activity is already in `workouts.json` before processing it.
 
-### Field defaults when Strava data is missing
+For same-date conflicts between sources, use `upsert_workout(workouts, new_workout, preferred_source)` which implements the `preferred_source` tiebreaker:
 
-- No `average_heartrate` → `avg_hr = null`, `max_hr = null`. analyze-workout handles null gracefully.
-- No `description` → `notes = null`; RPE will not be parsed (analyze-workout skips RPE delta).
+- If incoming source matches `preferred_source` and there's an existing entry from a different source on that date: mark the existing entry as `superseded_by: <new_id>`, keep it, and append the new one.
+- If incoming source does not match `preferred_source` and the preferred source already has an entry on that date: skip the incoming entry.
+
+---
+
+## What to do with the normalized record
+
+After receiving a normalized dict from `normalize_activity`:
+
+1. **Build the full workout record**:
+   ```json
+   {
+     "id": "wkt-YYYY-MM-DD-NNN",
+     "date": "<activity start date>",
+     "source": "strava",
+     "prescribed": "<look up from plan.json by date, or null>",
+     "actual": "<the normalized dict from normalize_activity>",
+     "analysis": "<call analyze-workout skill>"
+   }
+   ```
+
+2. **Call `analyze-workout`** with the `actual` dict and the `prescribed` workout (if found in `plan.json` for that date). The skill returns an `analysis` dict with `completion_pct`, `pace_delta_pct`, `rpe_delta`, `hr_drift_bpm`, `verdict`.
+
+3. **Call `upsert_workout(workouts, new_workout, preferred_source)`** to add the record to the in-memory workouts list with proper deduplication.
+
+4. **After processing all activities**, write the full updated `workouts` array back to `storage/workouts.json` in a single write (read-modify-write — never write individual records).
+
+5. **Update `daily_state.json`** for the most recent activity processed.
+
+6. **Update `users.json.integrations.strava`**: set `last_sync_at` to current ISO 8601 timestamp and `last_sync_status` to `"ok"`.
+
+7. **Hand off to Coach** with each `analyze-workout` result for `adapt-plan`.
+
+---
+
+## Error handling
+
+| Error condition | `last_sync_status` | User message |
+|---|---|---|
+| Rate limit (429 / "rate limit" in error) | `error:rate_limit` | "Strava rate limit reached — retry in 15 minutes." |
+| Auth failure (token/client_id/401 in error) | `error:auth` | "Strava auth expired — re-run `/run-init --connect strava`." |
+| MCP tool unavailable | `error:mcp_unavailable` | "Strava MCP server not available — check MCP config." |
+| Any other error | `error:unknown` | Surface verbatim error message |
+
+**On any error, do not write partial results to `workouts.json`.** Update `users.json.integrations.strava.last_sync_status` with the error code, then report to the user.
+
+---
+
+## Field defaults when Strava data is missing
+
+- No `average_heartrate` → `avg_hr = null`, `max_hr = null`. `analyze-workout` handles null gracefully.
+- No `description` → `notes = ""`; RPE will not be parsed.
 - No `splits_metric` → `splits = []`; HR drift will not be computed.
-
-## Edge cases
-
-- **MCP tool name differs at runtime**: log a warning and fall back to the v1 stub message.
-- **Activity type is Walk or Hike**: skip silently.
-- **Strava API rate limit exceeded**: surface the error and suggest retrying in 15 minutes.
-- **`avg_speed` is 0** (stationary activity): skip; would produce infinite pace.
+- `average_speed = 0` → `avg_pace_per_km_s = null` (the activity is still kept if distance and moving_time are valid).

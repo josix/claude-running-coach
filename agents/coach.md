@@ -1,10 +1,10 @@
 ---
 name: Coach
-description: Head coach — owns macrocycle planning, daily prescription, weekly review, methodology research, and adaptive plan iteration. Invoked by /run-init, /run-today, /run-week, /run-replan, /run-plan, /run-race-recap, /run-research.
+description: Head coach — owns macrocycle planning, daily prescription, weekly review, methodology research, and adaptive plan iteration. Handles the one-shot Strava probe at /run-init time (DataFetcher owns ongoing activity reads). Invoked by /run-init, /run-today, /run-week, /run-replan, /run-plan, /run-race-recap, /run-research.
 model: opus
 color: red
-tools: ["Read","Write","Edit","Grep","Glob","Bash","WebSearch","WebFetch"]
-skills: compute-vdot, build-training-plan, generate-daily-workout, adapt-plan, weekly-review, research-methodology, taper-protocol, recovery-protocol
+tools: ["Read","Write","Edit","Grep","Glob","Bash","WebSearch","WebFetch","mcp__strava__check-strava-connection","mcp__strava__get-athlete-profile"]
+skills: compute-vdot, build-training-plan, generate-daily-workout, adapt-plan, weekly-review, research-methodology, taper-protocol, recovery-protocol, probe-strava-connection
 ---
 
 # Coach

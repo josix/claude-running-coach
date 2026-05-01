@@ -115,11 +115,11 @@ Three specialist agents under `agents/`. Each is a `.md` file with YAML front-ma
 #### Coach (`agents/coach.md`)
 - **Model**: opus
 - **Color**: red
-- **Tools**: Read, Write, Edit, Grep, Glob, Bash, WebSearch, WebFetch
-- **Owned skills**: `compute-vdot`, `build-training-plan`, `generate-daily-workout`, `adapt-plan`, `weekly-review`, `research-methodology`, `taper-protocol`, `recovery-protocol`
+- **Tools**: Read, Write, Edit, Grep, Glob, Bash, WebSearch, WebFetch, `mcp__strava__check-strava-connection`, `mcp__strava__get-athlete-profile` (probe only)
+- **Owned skills**: `compute-vdot`, `build-training-plan`, `generate-daily-workout`, `adapt-plan`, `weekly-review`, `research-methodology`, `taper-protocol`, `recovery-protocol`, `probe-strava-connection`
 - **Single-writer responsibility**: `users.json`, `plan.json`, `progress.json` (the strategic state)
 - **Invoked when**: `/run-init`, `/run-today`, `/run-week`, `/run-replan`, `/run-plan`, `/run-race-recap`, `/run-research`
-- **Description**: The head coach. Owns macrocycle design, daily prescription, weekly assessment, and methodology research. Reasoning-heavy → opus.
+- **Description**: The head coach. Owns macrocycle design, daily prescription, weekly assessment, and methodology research. Reasoning-heavy → opus. Also performs a one-shot probe at `/run-init` time to verify Strava connectivity via `probe-strava-connection` before setting `connected: true`.
 
 #### WorkoutLogger (`agents/workout-logger.md`)
 - **Model**: sonnet
@@ -133,7 +133,7 @@ Three specialist agents under `agents/`. Each is a `.md` file with YAML front-ma
 #### DataFetcher (`agents/data-fetcher.md`)
 - **Model**: sonnet
 - **Color**: blue
-- **Tools**: Read, Write, Edit, Grep, Glob, Bash, mcp__strava-mcp__*
+- **Tools**: Read, Write, Edit, Grep, Glob, Bash, mcp__strava__*
 - **Owned skills**: `fetch-strava-activity`; calls `analyze-workout` (shared)
 - **Single-writer responsibility**: same files as WorkoutLogger when sourced from Strava (`workouts.json`, `daily_state.json`)
 - **Invoked when**: `/run-sync`
@@ -143,7 +143,7 @@ Three specialist agents under `agents/`. Each is a `.md` file with YAML front-ma
 
 ### 2.3 Skills
 
-11 skills under `skills/<kebab-name>/SKILL.md`. Skills with deterministic math get a Python helper (per user preference: code-over-tokens for math).
+12 skills under `skills/<kebab-name>/SKILL.md`. Skills with deterministic math get a Python helper (per user preference: code-over-tokens for math).
 
 | # | Skill | Owner | 2-line description | Code? |
 |---|---|---|---|---|
@@ -158,6 +158,7 @@ Three specialist agents under `agents/`. Each is a `.md` file with YAML front-ma
 | 9 | `research-methodology` | Coach | Web-search-backed Q&A for novel coaching questions (heat acclimation, altitude, recovery from illness). Cites sources. | No |
 | 10 | `taper-protocol` | Coach | Specialized logic for race-week taper: −20%/−40%/−60% volume curve, intensity preservation, race-day shakeout. Called by `build-training-plan` and `adapt-plan` when within 3 weeks of race. | Yes (`scripts/taper.py`) |
 | 11 | `recovery-protocol` | Coach | Post-race + injury-flag protocols: 4 days rest, then 30–40 min jog (per user KB). Inserts recovery block into plan. | No |
+| 12 | `probe-strava-connection` | Coach | Verifies Strava MCP connectivity via `mcp__strava__check-strava-connection` + `mcp__strava__get-athlete-profile`; returns ok+athlete_id on success or classified error otherwise. Gates `--connect strava` from setting a false-positive `connected:true`. | No |
 
 **Skill structure** (each follows progressive disclosure):
 ```
@@ -184,15 +185,21 @@ Modest. Only what enforces invariants the design demands.
 
 ### 2.5 MCPs
 
-| MCP server | Tier | Auth | Purpose | Soft/Hard |
-|---|---|---|---|---|
-| `r-huijts/strava-mcp` | v1 | OAuth2 (user-side setup) | Read activities, splits, HR, laps | **Soft** — manual logging is the default; user opts in via `/run-init --connect strava` |
-| `Nicolasvegam/garmin-connect-mcp` (read) | v2 | Garmin Connect creds | Direct Garmin pull (alt to Strava) | Soft |
-| `st3v/garmin-workouts-mcp` (write) | v2 | Garmin Connect creds | Push generated workouts to watch | Soft |
-| Strava webhook (server) | v3 | n/a (push) | Auto-trigger plan iteration on activity completion | n/a — defer to v3 |
-| WebSearch (built-in) | v1 | n/a | `research-methodology` skill | Hard (always available) |
+| MCP server | Tier | Status | Auth | Purpose | Soft/Hard |
+|---|---|---|---|---|---|
+| `r-huijts/strava-mcp` | v1 | active | OAuth2 (user-side setup) | Read activities, splits, HR, laps | **Soft** — manual logging is the default; user opts in via `/run-init --connect strava` |
+| `Nicolasvegam/garmin-connect-mcp` (read) | v2 | planned | Garmin Connect creds | Direct Garmin pull (alt to Strava) | Soft |
+| `st3v/garmin-workouts-mcp` (write) | v2 | planned | Garmin Connect creds | Push generated workouts to watch | Soft |
+| Strava webhook (server) | v3 | planned | n/a (push) | Auto-trigger plan iteration on activity completion | n/a — defer to v3 |
+| WebSearch (built-in) | v1 | active | n/a | `research-methodology` skill | Hard (always available) |
 
 **Manifest impact**: `.claude-plugin/plugin.json` declares no MCP as required; documentation in README explains opt-in setup for Strava.
+
+**Integration schema fields** (all stored under `users.json.integrations`):
+- `preferred_source` (`"manual" | "strava" | "garmin"`) — tiebreaker for same-date workouts from multiple sources. Defaults to `"manual"`; flips to `"strava"` only after a successful probe during `/run-init --connect strava`.
+- `connected_at` — ISO 8601 timestamp when the connection was established; `null` until first successful probe.
+- `last_sync_at` — ISO 8601 timestamp of the most recent sync attempt; `null` until first `/run-sync`.
+- `last_sync_status` — `null | "ok" | "error:<code>"` where codes are: `auth`, `rate_limit`, `mcp_unavailable`, `network`, `unknown`.
 
 ---
 
@@ -246,7 +253,21 @@ All persistent state lives under `storage/` (mutable, per-user) or `data/` (read
     "constraints_notes": "no running on weekday mornings"
   },
   "integrations": {
-    "strava": { "connected": false, "athlete_id": null }
+    "preferred_source": "manual",
+    "strava": {
+      "connected": false,
+      "athlete_id": null,
+      "connected_at": null,
+      "last_sync_at": null,
+      "last_sync_status": null
+    },
+    "garmin": {
+      "connected": false,
+      "user_id": null,
+      "connected_at": null,
+      "last_sync_at": null,
+      "last_sync_status": null
+    }
   }
 }
 ```
@@ -256,6 +277,8 @@ All persistent state lives under `storage/` (mutable, per-user) or `data/` (read
 - `workout_unit` toggles whether `/run-today` cards show `45 min @ E pace` vs `8 km @ E pace`. Default `time` per user KB preference.
 - `quality_days` are the days where T/I/R workouts can land. Logic enforces no back-to-back quality days.
 - `rest_days_sacred: true` blocks the adapter from inserting "make-up" workouts on rest days.
+- `preferred_source` (`"manual" | "strava" | "garmin"`) — default `"manual"`. Flips to `"strava"` only after a successful probe via `/run-init --connect strava`. Acts as a tiebreaker: when the same date has workouts from multiple sources, the entry from `preferred_source` wins; the other entry is kept but marked `superseded_by: <winning_id>`.
+- `connected_at` / `last_sync_at` / `last_sync_status` — populated at connection time and after each `/run-sync`. `last_sync_status` is `null | "ok" | "error:<code>"` (codes: `auth`, `rate_limit`, `mcp_unavailable`, `network`, `unknown`). The Garmin schema slot is reserved for v2 forward-compatibility.
 
 ### 3.2 `storage/plan.json`
 
@@ -599,20 +622,19 @@ Explicit non-goals:
 ### v1 (MVP) — 4–6 weeks of build
 **Ships**:
 - All 9 commands (manual-logging path complete)
-- All 11 skills (with Python helpers for VDOT, macrocycle, analysis, adaptation, weekly review, taper)
-- Coach + WorkoutLogger agents (DataFetcher stub returns "Strava not connected")
+- All 12 skills (with Python helpers for VDOT, macrocycle, analysis, adaptation, weekly review, taper)
+- Coach + WorkoutLogger + DataFetcher agents (fully wired — no stubs)
 - All storage schemas
 - `data/vdot-table.json` + `data/workout-templates.json` populated
 - 2 hooks (SessionStart reminder + plan-integrity)
 - README with onboarding walkthrough
 - End-to-end happy path: `/run-init` → `/run-today` → `/run-log` → `/run-week`
+- Strava read (soft, opt-in via `/run-init --connect strava`); manual remains the default. Probe-based connection (no false positives). Dedup + multi-source coexistence via `preferred_source` tiebreaker.
 
-### v2 — Strava integration + Garmin read
+### v2 — Garmin read + tune-up races
 **Ships**:
-- DataFetcher fully wired to Strava MCP
-- `/run-sync` produces same analysis as `/run-log`
-- Dedup logic (don't double-log a Strava-synced workout if also manually logged)
-- Optional Garmin Connect read (alternate to Strava)
+- Optional Garmin Connect read (alternate to Strava; schema slot reserved in v0.2.0 users.json)
+- Cross-provider dedup (Strava + Garmin)
 - `goal.tune_up_races[]` support
 - Methodology toggle: pyramidal in addition to polarized
 
@@ -666,13 +688,13 @@ Optimized so the day-1 build hits a working `/run-init` → `/run-today` flow wi
 13. Unit tests for each Python helper (pytest, run via Bash)
 
 ### Phase 4 — Skills as Markdown (day 3–4)
-14. Write SKILL.md + body.md for all 11 skills, referencing scripts where applicable
+14. Write SKILL.md + body.md for all 12 skills, referencing scripts where applicable
 15. Skills follow progressive disclosure (front-matter description short; body loaded on demand)
 
 ### Phase 5 — Agents (day 4)
 16. Write `agents/coach.md` (opus, full toolset, owns 8 skills)
 17. Write `agents/workout-logger.md` (sonnet, owns log-workout + analyze-workout)
-18. Write `agents/data-fetcher.md` (sonnet, stub: returns "Strava not connected" until v2)
+18. Write `agents/data-fetcher.md` (sonnet, owns fetch-strava-activity; wired to Strava MCP in Phase 11)
 
 ### Phase 6 — Commands (day 4–5)
 19. Write all 9 `/run-*` command files with argument hints and agent routing
@@ -699,7 +721,15 @@ Optimized so the day-1 build hits a working `/run-init` → `/run-today` flow wi
 ### Phase 10 — v1 release
 33. Tag plugin v0.1.0
 34. User dogfood for 1–2 training weeks
-35. Iterate based on real-use feedback before v2 (Strava integration)
+35. Iterate based on real-use feedback; Strava read wiring follows in Phase 11
+
+### Phase 11 — Strava read wiring (post-v0.1 patch)
+36. **Schema patches** — update `storage/users.example.json` with new `integrations` block (`preferred_source`, `connected_at`, `last_sync_at`, `last_sync_status`) and patch DESIGN.md to resolve §2.5 vs §7 contradiction in favor of v1 Strava.
+37. **Python helper + tests** — create `skills/fetch-strava-activity/scripts/strava_normalize.py` with pure functions (`normalize_activity`, `parse_rpe_from_notes`, `is_duplicate`, `upsert_workout`) and matching pytest suite; all tests must be green before any wiring proceeds.
+38. **`probe-strava-connection` skill** — new skill that checks MCP availability, calls `mcp__strava__check-strava-connection` + `mcp__strava__get-athlete-profile`, and returns structured `{ok, athlete_id}` or classified error (`mcp_unavailable`, `auth`, `unknown`).
+39. **Agent updates** — add `mcp__strava__check-strava-connection` + `mcp__strava__get-athlete-profile` + `probe-strava-connection` to Coach; add `mcp__strava__*` namespace to DataFetcher and replace v1 stub body with the real read flow.
+40. **Command updates** — update `run-init.md` to invoke the probe skill when `--connect strava` is supplied and surface the result; update `run-sync.md` to drop v1 framing and document failure modes.
+41. **README + version bump** — add "Connecting Strava (optional)" section, update status block, bump `plugin.json` version to `0.2.0`.
 
 **Critical-path observation**: Steps 1–13 unblock all downstream work. Steps 14–22 can partially parallelize (skills and agents are independent files). Phase 8 is the gate that proves MVP integrity.
 

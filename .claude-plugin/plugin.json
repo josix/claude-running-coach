@@ -1,6 +1,6 @@
 {
   "name": "running-coach",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "description": "Adaptive running training plugin: VDOT-based pace prescription, polarized 80/20 periodization, post-workout iteration.",
   "author": {
     "name": "Wilson Wang",
@@ -14,6 +14,5 @@
     "vdot",
     "coaching",
     "fitness"
-  ],
-  "hooks": "${CLAUDE_PLUGIN_ROOT}/hooks/hooks.json"
+  ]
 }
