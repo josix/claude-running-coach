@@ -145,13 +145,26 @@ class TestVerdictOver(unittest.TestCase):
         )
         self.assertEqual(result["verdict"], "over")
 
-    def test_rpe_very_low_alone_is_over(self):
-        # rpe_delta < -1 alone is sufficient for "over".
+    def test_rpe_very_low_alone_is_NOT_over(self):
+        # v0.2 fix: rpe-only trigger removed. Low RPE without faster pace = on-target,
+        # not 'over'. (Common case: runner self-paces slower than target; RPE drops
+        # accordingly; not a genuine over-fitness signal.)
         result = analyze(
-            _make_actual(avg_pace_per_km_s=264, rpe=4),  # expected T=7 → delta=-3
+            _make_actual(avg_pace_per_km_s=264, rpe=4),  # at-target pace, expected T=7 → delta=-3
             _make_prescribed(type_="T"),
         )
-        self.assertEqual(result["verdict"], "over")
+        self.assertEqual(result["verdict"], "on-target")
+
+    def test_slow_pace_low_rpe_not_over(self):
+        # Regression for v0.1 bug caught during dogfooding (5/1 E run):
+        # User ran 26% slower than target with low RPE; old logic flipped to 'over'
+        # via rpe-only trigger; new logic correctly returns 'on-target'.
+        slow_pace = int(264 * 1.26)  # 26% slower
+        result = analyze(
+            _make_actual(avg_pace_per_km_s=slow_pace, rpe=4),  # T expected=7 → delta=-3
+            _make_prescribed(type_="T"),
+        )
+        self.assertEqual(result["verdict"], "on-target")
 
     def test_fast_pace_with_normal_rpe_not_over(self):
         # pace faster but rpe_delta = 0 (not <= 0 for non-pace trigger) — wait, rpe_delta=0 IS <=0.

@@ -574,10 +574,12 @@ function on_workout_logged(workout):
 |---|---|---|
 | `completion_pct` | < 80% | — |
 | `pace_delta_pct` | > +5% (slower) | < -3% (faster) AND `rpe_delta <= 0` |
-| `rpe_delta` | > +2 | < -1 |
+| `rpe_delta` | > +2 | — (no rpe-only trigger; v0.2) |
 | `hr_drift_bpm` (intra-session) | > 8 ⇒ promote to red flag | n/a |
 
-A workout is "under" if **any two** of: completion, pace, RPE thresholds are exceeded. "Over" requires **both** pace and RPE conditions (avoid false promotion from a single fast-feeling day).
+A workout is "under" if **any two** of: completion, pace, RPE thresholds are exceeded. "Over" requires **both** faster-than-prescribed pace AND non-elevated RPE — i.e., a genuine over-fitness signal must include actual faster pace, not just a low RPE on a self-paced slow run.
+
+**v0.2 change** — the prior `rpe_delta < -1` solo trigger for "over" was removed after dogfooding on 2026-05-01: a runner who self-paces slower than prescribed and reports correspondingly low RPE was being falsely flagged as ahead-of-fitness. Real over-fitness shows up as faster pace at lower RPE, not lower RPE alone.
 
 ---
 

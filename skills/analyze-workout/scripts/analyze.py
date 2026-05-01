@@ -91,18 +91,20 @@ def _compute_verdict(
     rpe_delta: int | None,
 ) -> str:
     """
-    Verdict logic per DESIGN.md §4.
+    Verdict logic per DESIGN.md §4 (v0.2 — rpe-only 'over' trigger removed).
 
     'aborted'    if completion_pct < 50
     'under'      if any TWO of: completion_pct < 80, pace_delta_pct > +5, rpe_delta > +2
-    'over'       if BOTH: pace_delta_pct < -3 AND rpe_delta <= 0
-                   OR rpe_delta < -1 alone is sufficient (per spec: "rpe_delta < -1 sufficient on its own")
+    'over'       if BOTH pace_delta_pct < -3 AND rpe_delta <= 0
+                 (rpe-only trigger removed — it falsely flagged self-paced slow runs
+                 as ahead-of-fitness when the runner ran slower than prescribed AND
+                 naturally reported lower RPE; the real signal of over-fitness requires
+                 actual faster-than-prescribed pace.)
     'on-target'  otherwise
     """
     if completion_pct < 50:
         return "aborted"
 
-    # Count "under" signals.
     under_signals = 0
     if completion_pct < 80:
         under_signals += 1
@@ -114,13 +116,8 @@ def _compute_verdict(
     if under_signals >= 2:
         return "under"
 
-    # "over" check.
     pace_faster = pace_delta_pct is not None and pace_delta_pct < -3
     rpe_low = rpe_delta is not None and rpe_delta <= 0
-    rpe_very_low = rpe_delta is not None and rpe_delta < -1
-
-    if rpe_very_low:
-        return "over"
     if pace_faster and rpe_low:
         return "over"
 
