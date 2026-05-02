@@ -23,7 +23,7 @@ Returns a dict in one of two shapes:
 
 **Failure:**
 ```json
-{ "ok": false, "error_code": "<code>", "user_message": "<human-readable instructions>" }
+{ "ok": false, "error": "<code>", "message": "<human-readable instructions>" }
 ```
 
 See `body.md` for the full decision tree and user-facing messages for each failure mode.

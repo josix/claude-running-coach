@@ -19,7 +19,7 @@ An append-only log of every completed workout, keyed by date and a sequence numb
 |-------|------|-------------|
 | `id` | string | Unique workout ID in the format `wkt-YYYY-MM-DD-NNN`, where NNN handles multi-session days (e.g., `"wkt-2026-01-01-001"`) |
 | `date` | string | ISO date the workout was performed |
-| `source` | string | How the workout was captured: `"manual"` (via `/run-log`) or `"strava"` (via `/run-sync`) |
+| `source` | string | How the workout was captured: `"manual"` (via `/run-log`), `"strava"` (via `/run-sync` with Strava), or `"garmin"` (via `/run-sync` with Garmin Connect) |
 | `prescribed` | object | What the plan called for (see Prescribed Object below) |
 | `actual` | object | What the runner actually did (see Actual Object below) |
 | `analysis` | object | Computed adherence metrics (see Analysis Object below) |
@@ -47,6 +47,7 @@ An append-only log of every completed workout, keyed by date and a sequence numb
 | `splits` | object[] | Array of per-km split objects `{ "km": integer, "pace_per_km_s": integer }`; may be empty |
 | `notes` | string | Free-text notes from the runner |
 | `strava_activity_id` | string\|null | Strava activity ID for deduplication; populated when `source="strava"`. `null` for manually logged workouts |
+| `garmin_activity_id` | string\|null | Garmin activity ID for deduplication; populated when `source="garmin"`. `null` otherwise |
 
 ## Analysis Object
 

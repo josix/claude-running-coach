@@ -68,6 +68,7 @@ After receiving a normalized dict from `normalize_activity`:
 | Rate limit (429 / "rate limit" in error) | `error:rate_limit` | "Strava rate limit reached — retry in 15 minutes." |
 | Auth failure (token/client_id/401 in error) | `error:auth` | "Strava auth expired — re-run `/run-init --connect strava`." |
 | MCP tool unavailable | `error:mcp_unavailable` | "Strava MCP server not available — check MCP config." |
+| Network failure (timeout/dns/connection in error) | `error:network` | "Strava sync failed due to a network issue — check connectivity and retry." |
 | Any other error | `error:unknown` | Surface verbatim error message |
 
 **On any error, do not write partial results to `workouts.json`.** Update `users.json.integrations.strava.last_sync_status` with the error code, then report to the user.

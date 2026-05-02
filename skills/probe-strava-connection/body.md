@@ -16,8 +16,8 @@ Return:
 ```json
 {
   "ok": false,
-  "error_code": "mcp_unavailable",
-  "user_message": "The Strava MCP server is not connected. To install it:\n1. Install the r-huijts/strava-mcp server: https://github.com/r-huijts/strava-mcp\n2. Add it to your Claude Code MCP configuration (see https://docs.anthropic.com/en/docs/claude-code/mcp)\n3. Set the required environment variables (see Step 2 prerequisites below)\n4. Restart Claude Code and re-run /run-init --connect strava"
+  "error": "mcp_unavailable",
+  "message": "The Strava MCP server is not connected. To install it:\n1. Install the r-huijts/strava-mcp server: https://github.com/r-huijts/strava-mcp\n2. Add it to your Claude Code MCP configuration (see https://docs.anthropic.com/en/docs/claude-code/mcp)\n3. Set the required environment variables (see Step 2 prerequisites below)\n4. Restart Claude Code and re-run /run-init --connect strava"
 }
 ```
 
@@ -51,8 +51,8 @@ If the response is missing the `id` field (degraded MCP response), return:
 ```json
 {
   "ok": false,
-  "error_code": "unknown",
-  "user_message": "Strava MCP responded but did not include athlete id. Try again, or check that your Strava API app has the required scopes (read,activity:read_all)."
+  "error": "unknown",
+  "message": "Strava MCP responded but did not include athlete id. Try again, or check that your Strava API app has the required scopes (read,activity:read_all)."
 }
 ```
 
@@ -79,8 +79,8 @@ Return:
 ```json
 {
   "ok": false,
-  "error_code": "auth",
-  "user_message": "Strava authentication failed or no account is connected. To connect:\n\n1. Run the MCP's OAuth flow by calling mcp__strava__connect-strava (the server will guide you through Strava's OAuth consent).\n\nOr if you've already done that, verify these environment variables are set correctly in your MCP server config:\n- STRAVA_CLIENT_ID — your Strava API app client ID\n- STRAVA_CLIENT_SECRET — your Strava API app client secret\n- STRAVA_REFRESH_TOKEN — a valid refresh token for your Strava account\n\nTo obtain these:\n1. Create a Strava API app at https://www.strava.com/settings/api\n2. Use mcp__strava__connect-strava or the manual OAuth flow to generate a refresh token\n3. Add the variables to your Claude Code MCP server configuration\n\nAfter connecting, restart Claude Code and re-run /run-init --connect strava."
+  "error": "auth",
+  "message": "Strava authentication failed or no account is connected. To connect:\n\n1. Run the MCP's OAuth flow by calling mcp__strava__connect-strava (the server will guide you through Strava's OAuth consent).\n\nOr if you've already done that, verify these environment variables are set correctly in your MCP server config:\n- STRAVA_CLIENT_ID — your Strava API app client ID\n- STRAVA_CLIENT_SECRET — your Strava API app client secret\n- STRAVA_REFRESH_TOKEN — a valid refresh token for your Strava account\n\nTo obtain these:\n1. Create a Strava API app at https://www.strava.com/settings/api\n2. Use mcp__strava__connect-strava or the manual OAuth flow to generate a refresh token\n3. Add the variables to your Claude Code MCP server configuration\n\nAfter connecting, restart Claude Code and re-run /run-init --connect strava."
 }
 ```
 
@@ -90,8 +90,8 @@ Return:
 ```json
 {
   "ok": false,
-  "error_code": "unknown",
-  "user_message": "<verbatim error message from the MCP tool call>"
+  "error": "unknown",
+  "message": "<verbatim error message from the MCP tool call>"
 }
 ```
 
@@ -99,7 +99,7 @@ Return:
 
 ## Failure mode summary
 
-| error_code | When it fires | What to tell the user |
+| error | When it fires | What to tell the user |
 |---|---|---|
 | `mcp_unavailable` | Either probe tool not in tool list | Install r-huijts/strava-mcp and add to MCP config |
 | `auth` | check-strava-connection reports not-connected, OR profile call returns credential-related error | Run `mcp__strava__connect-strava` to OAuth, or check env vars |

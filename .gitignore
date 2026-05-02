@@ -25,3 +25,6 @@ Thumbs.db
 
 # Claude Code local state (orchestration, observability, etc.)
 .claude/
+
+# garmin-givemydata SeleniumBase scratch (created during garmin_sync)
+downloaded_files/

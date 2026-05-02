@@ -34,7 +34,9 @@
   "lifestyle": {
     "typical_sleep_hours": 7,
     "stress_level": "moderate",
-    "injury_history": [],
+    "injury_history": [
+      { "area": "right ITB (iliotibial band)", "status": "resolved", "guidance": "watch for lateral knee pain on tempo days" }
+    ],
     "constraints_notes": ""
   },
   "integrations": {
@@ -48,10 +50,15 @@
     },
     "garmin": {
       "connected": false,
-      "user_id": null,
+      "garmin_user_id": null,
+      "email": null,
+      "display_name": null,
       "connected_at": null,
       "last_sync_at": null,
-      "last_sync_status": null
+      "last_sync_status": null,
+      "last_sync_imported": null,
+      "last_sync_enriched": null,
+      "data_freshness_date": null
     }
   }
 }

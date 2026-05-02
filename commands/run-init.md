@@ -1,6 +1,6 @@
 ---
 description: One-time onboarding — interview the runner about goal, fitness, training days, lifestyle. Generates users.json + plan.json. Optionally connect Strava with --connect strava.
-argument-hint: "[--connect strava]"
+argument-hint: "[--connect strava|garmin]"
 ---
 
 # /run-init
@@ -9,7 +9,7 @@ argument-hint: "[--connect strava]"
 
 Set up a brand-new runner profile and generate a personalized training plan. This command collects your race goal, current fitness level, and lifestyle constraints, then builds a full macrocycle tailored to your target date.
 
-Run this once when starting the plugin for the first time. You can also re-run it with `--connect strava` to probe and connect your Strava account.
+Run this once when starting the plugin for the first time. You can also re-run it with `--connect strava` or `--connect garmin` to probe and connect an activity source.
 
 ## Action
 
@@ -55,7 +55,37 @@ After writing the initial `users.json`, Coach will attempt to connect Strava via
 
 3. **If probe returns `ok: false`**:
    - Leave `users.json.integrations.strava.connected = false` and `preferred_source = "manual"`.
-   - Surface the probe's `user_message` verbatim so the user knows what to fix.
+   - Surface the probe's `message` verbatim so the user knows what to fix.
+   - Onboarding still completes the manual path — the runner has a working plan immediately.
+
+### If `--connect garmin` is supplied
+
+After writing the initial `users.json`, Coach will attempt to connect Garmin Connect via the `probe-garmin-connection` skill. The plugin targets the `nrvim/garmin-givemydata` MCP server (a SQLite-backed Garmin client that bypasses Cloudflare via SeleniumBase UC mode); the older `garth`-based `Taxuspt/garmin_mcp` server stopped working in March 2026 when Garmin deployed Cloudflare bot detection.
+
+1. **Call `probe-garmin-connection`** — checks MCP availability, calls `mcp__garmin__garmin_user_profile`, and verifies the local SQLite database has been seeded with profile rows.
+
+2. **If probe returns `ok: true`**:
+   - Write `users.json.integrations.garmin`:
+     ```json
+     {
+       "connected": true,
+       "garmin_user_id": "<garmin_user_id from probe>",
+       "email": "<email from probe, or null>",
+       "display_name": "<display_name from probe, or null>",
+       "connected_at": "<now ISO 8601>",
+       "last_sync_at": null,
+       "last_sync_status": null,
+       "last_sync_imported": null,
+       "last_sync_enriched": null,
+       "data_freshness_date": null
+     }
+     ```
+   - Set `users.json.integrations.preferred_source = "garmin"`.
+   - Confirm to the user: "Connected Garmin Connect (garmin_user_id: {garmin_user_id}{, display name: {display_name} if present}). `/run-sync` will pull your recent runs."
+
+3. **If probe returns `ok: false`**:
+   - Leave `users.json.integrations.garmin.connected = false` and `preferred_source = "manual"`.
+   - Surface the probe's `message` verbatim so the user knows what to fix. The probe distinguishes three failure modes: `mcp_unavailable` (install the MCP server), `db_empty` (run `garmin-givemydata` once to populate the local DB), and `unknown` (verbatim error + diagnosis hint).
    - Onboarding still completes the manual path — the runner has a working plan immediately.
 
 ## Prerequisites for `--connect strava`
@@ -73,6 +103,70 @@ Before running `/run-init --connect strava`, set up the Strava MCP server:
 
 If setup is not complete, the probe will return `mcp_unavailable` or `auth` and the onboarding will fall back to manual logging. You can re-run `/run-init --connect strava` at any time once setup is complete.
 
+## Prerequisites for `--connect garmin`
+
+Before running `/run-init --connect garmin`, set up the `nrvim/garmin-givemydata` MCP server. (The older `garth`-based `Taxuspt/garmin_mcp` is no longer supported by this plugin — Garmin's March 2026 Cloudflare deployment broke `garth` and every server built on it.)
+
+### Why this server
+
+`garmin-givemydata` uses SeleniumBase UC mode (undetected Chrome) to log in through Garmin's regular web flow, capturing a `cf_clearance` cookie that satisfies Cloudflare's bot detection. It dumps everything to a local SQLite database and exposes 44 read-only MCP tools that query that DB. The MCP server only contacts Garmin live when you call `garmin_sync` — every other tool is a fast local read. See https://github.com/nrvim/garmin-givemydata for the full feature matrix.
+
+### Steps
+
+1. **Install Google Chrome** (required by SeleniumBase). Download from https://www.google.com/chrome/ if you don't already have it.
+
+2. **Install `garmin-givemydata`** with `uv` or `pipx` (do not use `brew` — the plugin tracks the PyPI release for predictable versioning). Both tools install into an isolated environment and put `garmin-givemydata` and `garmin-mcp` on PATH.
+   ```
+   # Option A — uv (recommended)
+   uv tool install garmin-givemydata
+
+   # Option B — pipx
+   pipx install garmin-givemydata
+   ```
+   Requires Python 3.10+. `uv` will fetch a suitable Python automatically; `pipx` uses your system Python.
+
+3. **Run the initial sync** in a terminal — this is the slow step:
+   ```
+   garmin-givemydata
+   ```
+   On first run it prompts for your Garmin Connect email, password, and MFA code (if MFA is enabled), launches a headless Chrome window to complete login, then pulls your full history. Plan for ~30 minutes for ~10 years of data; pass `--days 90` if you only want recent data, or `--profile activities` to skip health metrics. Subsequent runs are incremental and take seconds.
+
+4. **Confirm the data location.** Both `uv tool install` and `pipx install` write the SQLite DB to `~/.garmin-givemydata/garmin.db` by default. Override with the `GARMIN_DATA_DIR` env var if you want it elsewhere.
+
+5. **Register `garmin-mcp` in your Claude Code MCP config** under namespace `garmin` (the plugin's `mcp__garmin__*` tool prefix depends on this namespace). After `uv tool install` or `pipx install`, the entry point is on PATH:
+   ```json
+   {
+     "mcpServers": {
+       "garmin": {
+         "command": "garmin-mcp"
+       }
+     }
+   }
+   ```
+   If `garmin-mcp` is not on Claude Code's PATH (common with `uv tool` on macOS), use the absolute path emitted by `uv tool list` or `pipx list` — for example `~/.local/bin/garmin-mcp` for pipx, or `~/.local/share/uv/tools/garmin-givemydata/bin/garmin-mcp` for uv. If you set a custom `GARMIN_DATA_DIR`, mirror it in the MCP config:
+   ```json
+   {
+     "mcpServers": {
+       "garmin": {
+         "command": "/absolute/path/to/garmin-mcp",
+         "env": { "GARMIN_DATA_DIR": "/absolute/path/to/data/dir" }
+       }
+     }
+   }
+   ```
+   See https://docs.anthropic.com/en/docs/claude-code/mcp for full MCP config docs.
+
+6. Restart Claude Code so the new MCP server is loaded, then run `/run-init --connect garmin`.
+
+### Caveats
+
+- **Cloudflare session is IP-bound.** The `cf_clearance` cookie expires when your egress IP changes. On a stable home/office IP it lasts weeks; on a laptop that hops networks or a VPN that rotates exits, expect to re-run `garmin-givemydata` (and re-prompt for credentials) more often. Re-auth happens automatically on next run.
+- **Live syncs still go through Cloudflare.** When `/run-sync` calls `garmin_sync(refresh=true)`, it triggers the headless-browser flow under the hood. If Garmin's bot detection tightens further, that path can break independently of the read tools — read tools keep working from the local DB regardless.
+- **First-run cost is real.** The 10-year bulk fetch is ~30 minutes; nothing the plugin does will speed it up. If you only care about recent training data, use `garmin-givemydata --days 90` for the first run.
+- **Probe scope.** `/run-init`'s probe only verifies that the local DB has profile rows — it cannot detect a stale Cloudflare session, since profile reads don't touch Garmin. Auth/Cloudflare failures surface at `/run-sync` time with their own error classification.
+
+If setup is incomplete, the probe will return `mcp_unavailable` (server not registered) or `db_empty` (registered but no `garmin-givemydata` run yet) and onboarding falls back to manual logging. You can re-run `/run-init --connect garmin` at any time once setup is complete.
+
 ## Output
 
 After completion, display:
@@ -81,6 +175,7 @@ After completion, display:
 - A macrocycle overview: phase names, week ranges, and focus areas
 - Today's first prescribed workout (so the runner knows what to expect immediately)
 - If Strava connected: confirmation with athlete username and instructions to use `/run-sync`
+- If Garmin connected: confirmation with garmin_user_id and instructions to use `/run-sync`
 - A prompt to run `/run-today` to see today's full workout card
 
 ## Notes

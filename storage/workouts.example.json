@@ -23,7 +23,8 @@
           { "km": 2, "pace_per_km_s": 360 }
         ],
         "notes": "felt good, legs fresh",
-        "strava_activity_id": null
+        "strava_activity_id": null,
+        "garmin_activity_id": null
       },
       "analysis": {
         "completion_pct": 100,
