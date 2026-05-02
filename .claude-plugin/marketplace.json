@@ -1,0 +1,28 @@
+{
+  "name": "josix-claude-running-coach",
+  "owner": {
+    "name": "Wilson Wang",
+    "email": "josixwang@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "running-coach",
+      "source": ".",
+      "description": "Adaptive running training plugin: VDOT-based pace prescription, polarized 80/20 periodization, post-workout iteration.",
+      "version": "0.3.0",
+      "author": {
+        "name": "Wilson Wang",
+        "email": "josixwang@gmail.com"
+      },
+      "license": "MIT",
+      "keywords": [
+        "running",
+        "training",
+        "marathon",
+        "vdot",
+        "coaching",
+        "fitness"
+      ]
+    }
+  ]
+}
