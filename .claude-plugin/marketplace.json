@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "running-coach",
-      "source": ".",
+      "source": "./",
       "description": "Adaptive running training plugin: VDOT-based pace prescription, polarized 80/20 periodization, post-workout iteration.",
       "version": "0.3.0",
       "author": {
