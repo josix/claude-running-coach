@@ -10,12 +10,12 @@
 ## Steps
 
 1. Look up the prescribed workout for the target date from `plan.json`. Note its `type`, `duration_min`, `target_pace`, and `notes`. If no prescription exists for that date, mark as "unplanned".
-2. Greet the user with the prescribed workout summary: "You had a {type} run scheduled for {duration_min} min at {pace}/km. How did it go?"
+2. Greet the user with the prescribed workout summary: "You had a {type} run scheduled for {duration_min} min at {pace}/km. How did it go?" — on first mention of the type code, append its gloss from `references/glossary.md` in parentheses (e.g., "You had a T — Threshold (comfortably hard; speak a few words, not a full sentence) run scheduled…").
 3. Conduct a **one-question-at-a-time** conversational interview:
    - "How long did you run?" (duration in minutes or hh:mm)
    - "How far?" (optional — distance in km or miles; skip if user says "didn't track")
    - "Average heart rate?" (optional — in bpm; skip if "didn't track")
-   - "RPE on a scale of 1-10?" (always ask — foundational signal)
+   - "RPE on a scale of 1–10? (RPE — Rate of Perceived Exertion: 1 = walking, 10 = all-out sprint)" (always ask — foundational signal)
    - "Any splits to log?" (optional — e.g., "5:20, 5:15, 5:30 per km"; skip if "no")
    - "Any notes or how did it feel?" (free text; optional)
 4. Parse user responses and build the `actual` dict:

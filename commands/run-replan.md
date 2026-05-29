@@ -37,6 +37,8 @@ After replanning:
 2. New macrocycle overview: phase names, week ranges, focus areas
 3. A prompt to run `/run-today` to see the first workout of the new plan
 
+> Jargon in this output (VDOT, macrocycle, Base/Build/Peak/Taper phases, etc.) is glossed on first use per the persona rule in `agents/coach.md`. Term definitions: see `references/glossary.md`.
+
 ## When to Use
 
 - Injury → rest period → return to training

@@ -19,6 +19,7 @@
    - Provides actionable numbers where available (e.g., "10-14 days of heat exposure before an event")
    - Acknowledges uncertainty or individual variation
    - Cites 2-3 sources inline (URL or author + title)
+   - If the answer surfaces jargon not in `references/glossary.md`, invents a brief plain-English gloss in the same one-sentence shape (≤ 12 words) so research-mode output stays accessible to all runners.
 6. If the answer implies a training modification:
    - State it explicitly as a proposal: "Based on this, I'd suggest [specific change]. Should I apply it to your plan?"
    - Do NOT call `adapt-plan` or write any file until the user confirms.

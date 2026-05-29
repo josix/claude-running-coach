@@ -37,10 +37,17 @@ Markdown card format:
 {fatigue_flag block if fatigue_flag != "none"}
 ```
 
-Workout type → full name mapping:
-- `E` → Easy Run, `L` → Long Run, `T` → Threshold Run, `I` → Interval Session,
-- `R` → Repetition Session, `M` → Marathon-Pace Run, `Strides` → Strides,
+Workout type → full name mapping (with first-use gloss):
+- `E` → Easy Run (conversational pace; you can chat in full sentences)
+- `L` → Long Run (week's longest run, usually at Easy pace)
+- `T` → Threshold Run (comfortably hard; speak a few words, not a full sentence)
+- `I` → Interval Session (hard reps of 3–5 min at roughly 5K race effort)
+- `R` → Repetition Session (short, fast strides at roughly mile race effort with full recovery)
+- `M` → Marathon-Pace Run (the pace you'd hold for a full marathon; comfortably steady, not casual)
+- `Strides` → Strides (4–6 fast (not sprint) 20-second pickups at the end of an easy run; primes leg turnover)
 - `Recovery` → Recovery Jog, `Rest` → Rest Day
+
+On the first use of each label in a rendered card, append its parenthetical gloss. Subsequent uses of the same label in the same card are terse (label only).
 
 ## Examples
 
@@ -49,13 +56,13 @@ Workout type → full name mapping:
 ```
 ## Today's Workout — 2026-05-05 (Tuesday)
 
-**Type:** E (Easy Run)
+**Type:** E — Easy Run (conversational pace; you can chat in full sentences)
 **Duration:** 35 min
 **Target Pace:** 5:24/km  (Easy zone)
-**RPE Expectation:** 4/10
+**RPE Expectation:** 4/10  (RPE — Rate of Perceived Exertion: 1 = walking, 10 = all-out sprint)
 
 ### Structure
-Easy throughout — conversational pace. Include 4×20s strides at the end.
+Easy throughout — conversational pace. Include 4×20s Strides (4–6 fast 20-second pickups; primes leg turnover) at the end.
 
 ### Warm-up Cue
 Calves felt tight last session — extend dynamic warm-up by 5 min.

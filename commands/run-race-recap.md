@@ -37,3 +37,5 @@ After completion:
 2. Updated pace table (new E, M, T, I, R paces)
 3. Recovery schedule for the next 7 days
 4. A note on when to expect the next quality training session
+
+> Jargon in this output (VDOT, pace codes E/M/T/I/R, recovery week, etc.) is glossed on first use per the persona rule in `agents/coach.md`. Term definitions: see `references/glossary.md`.

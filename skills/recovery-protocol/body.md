@@ -15,7 +15,7 @@ Implements the 4+3 protocol per the user's training knowledge base: "post-race: 
 
 1. Identify the 7 days starting the day after `date`.
 2. Days 1-4: set `type: "Rest"`, `duration_min: 0`, `notes: "Post-race rest (mandatory)"`.
-3. Days 5-7: set `type: "Recovery"`, `duration_min: 30`, `target_pace: "easy"`, `notes: "Easy jog — RPE ≤ 4, stop if any discomfort"`.
+3. Days 5-7: set `type: "Recovery"`, `duration_min: 30`, `target_pace: "easy"`, `notes: "Easy jog — RPE ≤ 4"`. When reading these instructions aloud to the user, gloss RPE on its first mention: "(RPE — Rate of Perceived Exertion: 1 = walking, 10 = all-out sprint)".
 4. Day 8: resume the scheduled workout from the original plan (shift subsequent days if needed).
 5. Write modified `plan.json`. Update `daily_state.json`: reset `consecutive_misses=0`, `consecutive_ahead=0`, set `carry_forward.fatigue_flag="post-race-recovery"`.
 6. Tell user: "4-day complete rest starts tomorrow, then 3 easy recovery jogs. You'll be back on full training {date+8}."

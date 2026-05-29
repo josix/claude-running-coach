@@ -35,7 +35,7 @@ Ask **one question at a time**. Do not present a form or a list of fields. Wait 
 2. "How long did you run? (minutes or hh:mm)"
 3. "Roughly how far did you go? (optional — press Enter to skip)"
 4. "What was your average heart rate? (optional — press Enter to skip)"
-5. "On a 1–10 scale, how hard did it feel? (RPE)"
+5. "On a 1–10 scale, how hard did it feel? (RPE — Rate of Perceived Exertion: 1 = walking, 10 = all-out sprint)"
 6. "Any splits or segments worth noting? (optional — press Enter to skip)"
 7. "Anything else to note? (conditions, how you felt, etc.)"
 

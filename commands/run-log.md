@@ -52,3 +52,5 @@ After logging:
 1. Confirmation of what was recorded (date, type, duration, RPE, verdict)
 2. Any plan adaptation that fired (or "Plan unchanged — on target, great work!")
 3. A prompt to run `/run-today` tomorrow morning
+
+> Jargon in this output (RPE, verdict, VDOT bump, strike rules, etc.) is glossed on first use per the persona rule in `agents/coach.md`. Term definitions: see `references/glossary.md`.

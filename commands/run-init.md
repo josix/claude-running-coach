@@ -171,8 +171,13 @@ If setup is incomplete, the probe will return `mcp_unavailable` (server not regi
 
 After completion, display:
 - A welcome message with the runner's name and goal
-- VDOT score and the five training paces (Easy, Marathon, Threshold, Interval, Repetition)
-- A macrocycle overview: phase names, week ranges, and focus areas
+- **VDOT** score (Jack Daniels' single-number fitness score, derived from a recent race or hard effort, that drives all your training paces) and the five training paces, each glossed on first mention:
+  - **E (Easy)** — conversational pace; you can chat in full sentences
+  - **M (Marathon)** — the pace you'd hold for a full marathon; comfortably steady, not casual
+  - **T (Threshold)** — comfortably hard; speak a few words, not a full sentence
+  - **I (Interval)** — hard reps of 3–5 min at roughly 5K race effort
+  - **R (Repetition)** — short, fast strides at roughly mile race effort with full recovery
+- A **macrocycle** (full training block to race day) overview: phase names, week ranges, and focus areas
 - Today's first prescribed workout (so the runner knows what to expect immediately)
 - If Strava connected: confirmation with athlete username and instructions to use `/run-sync`
 - If Garmin connected: confirmation with garmin_user_id and instructions to use `/run-sync`

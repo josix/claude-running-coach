@@ -19,6 +19,20 @@ Delegate to **Coach**. Coach reads `storage/plan.json` and renders a phase-by-ph
 Current Training Plan — Taipei Marathon 2026 (Oct 15)
 Total: 24 weeks | Today: Week 3 of Base Phase
 
+Phase definitions (first use):
+  Base  — pile up easy miles to build aerobic foundation before adding intensity.
+  Build — add quality sessions on top of the aerobic base.
+  Peak  — race-specific work at highest volume and intensity; brief and demanding.
+  Taper — cut volume before race day while maintaining intensity.
+
+Pace codes (first use):
+  E — Easy: conversational pace; you can chat in full sentences.
+  M — Marathon: pace you'd hold for a full marathon; comfortably steady.
+  T — Threshold: comfortably hard; speak a few words, not a full sentence.
+  I — Interval: hard reps of 3–5 min at roughly 5K race effort.
+  R — Repetition: short, fast strides at roughly mile race effort.
+  L — Long run: the week's longest run, usually at Easy pace.
+
 Phase    | Weeks   | Focus                          | Volume/wk | Key Workouts
 ---------|---------|--------------------------------|-----------|----------------------
 Base     | 1–10    | Aerobic volume + strides       | 240 min   | E, L, Strides
@@ -32,5 +46,7 @@ Taper    | 23–24   | Volume cut, intensity preserve | 160 min   | E, T (short)
   Sat  E  40 min (include 4x20s strides)
   Sun  L  80 min (RPE-driven)
 ```
+
+> For full definitions, see `references/glossary.md`.
 
 Highlights the current week row with a ▶ indicator. If no plan exists, prompt the runner to run `/run-init`.

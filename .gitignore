@@ -13,6 +13,7 @@ storage/plan.json
 storage/daily_state.json
 storage/workouts.json
 storage/progress.json
+*.tgz
 
 # OS
 .DS_Store

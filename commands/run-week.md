@@ -43,11 +43,12 @@ Delegate to **Coach**. Coach will call `weekly-review`, which:
 Weekly Review — Week 3 (Base Phase)
 
 Completed: 215 min / 240 min prescribed (90%)
-Quality sessions: 1 / 2 completed
-Average RPE: 5.2 / 10
+Quality sessions (workouts at T, I, R, or M intensity): 1 / 2 completed
+Average RPE: 5.2 / 10  (RPE — Rate of Perceived Exertion: 1 = walking, 10 = all-out sprint)
+HR Drift Avg: 1.8 bpm  (HR drift — heart rate creeping up at steady effort; a fatigue/heat signal)
 Fatigue: Stable
 
-Decision: ADVANCE — Week 4 (recovery week, −20% volume)
+Decision: ADVANCE — Week 4 (recovery week — ~70% volume to absorb training, −20% volume)
 
 Next week focus: Maintain aerobic base. Wednesday is your scheduled recovery step-back.
 ```

@@ -40,6 +40,19 @@ This prevents partial-write corruption and keeps the PostToolUse plan-integrity 
 - **Time-default**: Internal storage is in minutes (`duration_min`). When rendering cards for users, default to time unless `users.preferences.workout_unit = "distance"`.
 - **Conservative adaptation**: Prefer holding a week over advancing prematurely. The strike rules (1 = monitor, 2 = reduce intensity, 3 = recovery week) exist to protect the runner from over-training.
 
+## Communication Style — Explain Jargon on First Use
+
+The first time any glossary term appears in a single coach reply, append a parenthetical gloss of ≤ 12 words immediately after it. Do not gloss the same term twice in one reply. For jargon not in the glossary (research-mode or ad-hoc terms), invent a brief gloss in the same one-sentence shape.
+
+The canonical source for all gloss phrasing is `references/glossary.md`; inline glosses baked into templates should match that wording.
+
+Examples of the pattern:
+- "Your **T (Threshold)** session (comfortably hard; speak a few words, not a full sentence) is…"
+- "**RPE** (Rate of Perceived Exertion: 1 = walking, 10 = all-out sprint) target is 7."
+- "We're entering the **Taper** phase (cut volume before race day while maintaining intensity)."
+
+Forward-compat note: if `users.preferences.gloss_mode == "concise"` is set in a future schema version, skip glossing entirely. Do not implement the read now — just leave this note as a placeholder.
+
 ## When Invoked, Coach Should:
 
 - **`/run-init`**: Conduct the onboarding interview (goal race, target time, race date, recent race/time-trial for VDOT seed, training days, lifestyle, methodology preference, unit preference). Call `compute-vdot` to derive paces. Call `build-training-plan` to generate the full macrocycle. Write `storage/users.json` and `storage/plan.json`.

@@ -78,8 +78,8 @@ Markdown report format:
 
 **Volume:** {completed_volume_min} / {prescribed_volume_min} min ({pct}%)
 **Quality Sessions:** {quality_completed} / {quality_prescribed}
-**Avg RPE:** {avg_rpe} | RPE Creep vs last week: {rpe_creep}
-**HR Drift Avg:** {hr_drift_avg} bpm
+**Avg RPE:** {avg_rpe} | RPE Creep vs last week: {rpe_creep}  (RPE — Rate of Perceived Exertion: 1 = walking, 10 = all-out sprint; RPE Creep = trending upward at same effort, a fatigue signal)
+**HR Drift Avg:** {hr_drift_avg} bpm  (HR drift — heart rate creeping up at steady effort; a fatigue or heat signal)
 
 **Verdict: HOLD / ADVANCE / RECOVERY**
 

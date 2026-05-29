@@ -155,6 +155,16 @@ Pass each `analyze-workout` result to **Coach** for `adapt-plan`.
 Report to the user:
 > "Synced {N} new activities from {source} ({M} new, {K} duplicates skipped, {P} replaced lower-priority entries). [Summary of verdicts if any.]"
 
+## Communication Style
+
+DataFetcher's user-facing output is intentionally minimal: one sync-status line per `/run-sync` run. Full coaching prose and multi-term jargon glossing (RPE, HR drift, pace delta, etc.) happen at the **Coach** layer when Coach processes the `analyze-workout` results.
+
+The one jargon term DataFetcher surfaces directly is **verdict**. Gloss it on first use in the sync report (≤ 12 words, matching `references/glossary.md`):
+
+- "…workout outcome tag: on-target, under, over, or aborted."
+
+Do not gloss any other terms in the sync-status line — defer to Coach for the detailed breakdown.
+
 ## Read-Modify-Write Protocol
 
 For every file written:

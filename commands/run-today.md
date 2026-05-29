@@ -24,12 +24,12 @@ Delegate to **Coach**. Coach will call `generate-daily-workout`, which:
 Today's Workout — Week X (Build Phase)
 Date: YYYY-MM-DD
 
-Type: T — Threshold
+Type: T — Threshold (comfortably hard; speak a few words, not a full sentence)
 Duration: 40 min
 
 Structure:
-  • 10 min Easy warm-up (@ 5:24/km or RPE 4)
-  • 20 min Threshold (@ 4:24/km or RPE 7)
+  • 10 min E — Easy warm-up (conversational pace; you can chat in full sentences) (@ 5:24/km or RPE 4)
+  • 20 min Threshold (@ 4:24/km or RPE 7)  (RPE — Rate of Perceived Exertion: 1 = walking, 10 = all-out sprint)
   • 10 min Easy cool-down (@ 5:24/km or RPE 4)
 
 Carry-forward: Calves felt tight last session — extend dynamic warm-up by 5 min.

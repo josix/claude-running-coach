@@ -36,9 +36,9 @@ In practice, pass `plan`, `state`, and `delta` as Python dicts inline. The funct
 
    - **`no_change`**: update state only; no plan write.
    - **`monitor`**: update state only; tell user "Noted — watching for a pattern before adjusting."
-   - **`reduce_next_quality`**: write `new_plan` to `plan.json`; tell user "Next quality session has been stepped down one intensity level."
-   - **`recovery_week`**: write `new_plan` to `plan.json`; tell user "Three consecutive misses — inserting a recovery week (70% volume, one fewer quality session)." Reset `consecutive_misses` to 0.
-   - **`vdot_bump`**: do NOT write plan immediately. First, invoke `compute-vdot` to regenerate paces from the most recent race in `progress.json.vdot_history` (increment VDOT by 1 if no recent race available). Update `users.json.current_fitness`. Then re-resolve all future `target_pace` entries in `new_plan` (they remain as keys, not baked-in values — no plan rewrite needed for keys). Write `users.json` and `new_state`. Tell user "Three consecutive strong workouts — VDOT bumped to {new_vdot}. Training paces updated."
+   - **`reduce_next_quality`**: write `new_plan` to `plan.json`; tell user "Next quality session (a workout at T, I, R, or M intensity) has been stepped down one intensity level."
+   - **`recovery_week`**: write `new_plan` to `plan.json`; tell user "Three consecutive misses — inserting a recovery week (~70% of normal volume to absorb training, one fewer quality session)." Reset `consecutive_misses` to 0.
+   - **`vdot_bump`**: do NOT write plan immediately. First, invoke `compute-vdot` to regenerate paces from the most recent race in `progress.json.vdot_history` (increment VDOT by 1 if no recent race available). Update `users.json.current_fitness`. Then re-resolve all future `target_pace` entries in `new_plan` (they remain as keys, not baked-in values — no plan rewrite needed for keys). Write `users.json` and `new_state`. Tell user "Three consecutive strong workouts — VDOT bump (your fitness score moved up one step; training paces will be slightly faster) to {new_vdot}. Training paces updated."
    - **`red_flag_recovery`**: invoke the `recovery-protocol` skill with trigger `"red-flag-fatigue"`. Write `new_plan` and `new_state`.
 
 4. Always write `new_state` to `storage/daily_state.json`.
