@@ -27,6 +27,7 @@ TELEGRAM_TOKEN       = os.environ["TELEGRAM_TOKEN"]
 TELEGRAM_CHAT_ID     = os.environ["TELEGRAM_CHAT_ID"]
 ANTHROPIC_API_KEY    = os.environ["ANTHROPIC_API_KEY"]
 ACTIVITY_ID          = os.environ.get("ACTIVITY_ID", "").strip()
+STRAVA_ATHLETE_ID    = 130655035  # Po-Han's athlete ID — reject activities from other athletes
 
 REPO_ROOT = Path(__file__).parent.parent
 
@@ -226,6 +227,12 @@ def main() -> None:
     print(f"Fetching Strava activity {ACTIVITY_ID}...")
     token    = get_access_token()
     activity = strava_get(token, f"/activities/{ACTIVITY_ID}")
+
+    # Verify activity belongs to the expected athlete (reject spoofed activity IDs)
+    athlete_id = activity.get("athlete", {}).get("id")
+    if athlete_id != STRAVA_ATHLETE_ID:
+        print(f"Activity athlete {athlete_id} != expected {STRAVA_ATHLETE_ID}, skipping.")
+        return
 
     sport = activity.get("sport_type") or activity.get("type") or ""
     if sport not in {"Run", "TrailRun", "VirtualRun"}:

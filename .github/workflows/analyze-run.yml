@@ -9,6 +9,11 @@ on:
         description: 'Strava Activity ID (for manual test)'
         required: true
 
+# Prevent parallel spam: queue at most 1 pending run, cancel older ones
+concurrency:
+  group: strava-coach
+  cancel-in-progress: false
+
 jobs:
   analyze:
     runs-on: ubuntu-latest
