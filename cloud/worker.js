@@ -11,7 +11,7 @@
  *   GITHUB_REF           — branch to run on, e.g. "feat/cloud-webhook-coach" (default: "main")
  */
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     // ── Strava webhook verification (GET) ──────────────────────────
@@ -42,7 +42,7 @@ export default {
       // Only trigger on new run activity creation
       if (payload.object_type === 'activity' && payload.aspect_type === 'create') {
         // Fire-and-forget: don't await so Strava gets 200 immediately
-        env.EXECUTION_CTX?.waitUntil(
+        ctx.waitUntil(
           triggerGitHubActions(env, String(payload.object_id))
             .catch(err => console.error('Failed to trigger Actions:', err.message))
         );
