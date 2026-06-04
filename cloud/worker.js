@@ -39,6 +39,13 @@ export default {
 
       console.log('Strava event:', JSON.stringify(payload));
 
+      // Only trigger for Po-Han's account (athlete ID 130655035)
+      // Silently ignore events from other athletes — don't leak info via error codes
+      if (payload.owner_id !== 130655035) {
+        console.log(`Ignored event for owner_id ${payload.owner_id}`);
+        return new Response('OK', { status: 200 });
+      }
+
       // Only trigger on new run activity creation
       if (payload.object_type === 'activity' && payload.aspect_type === 'create') {
         // Fire-and-forget: don't await so Strava gets 200 immediately
