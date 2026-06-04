@@ -55,8 +55,13 @@ def get_access_token() -> str:
     req = urllib.request.Request(
         "https://www.strava.com/oauth/token", data=data, method="POST"
     )
-    with urllib.request.urlopen(req) as r:
-        return json.loads(r.read())["access_token"]
+    try:
+        with urllib.request.urlopen(req) as r:
+            return json.loads(r.read())["access_token"]
+    except urllib.error.HTTPError as e:
+        body = e.read().decode(errors="replace")
+        print(f"Strava OAuth error {e.code}: {body}", file=sys.stderr)
+        raise
 
 def strava_get(token: str, path: str):
     req = urllib.request.Request(
