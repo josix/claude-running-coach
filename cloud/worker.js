@@ -8,6 +8,7 @@
  *   STRAVA_VERIFY_TOKEN  — any random string you choose when registering the webhook
  *   GITHUB_TOKEN         — fine-grained PAT with Actions: Read/Write on this repo
  *   GITHUB_REPO          — e.g. "pohanchi/claude-running-coach"
+ *   GITHUB_REF           — branch to run on, e.g. "feat/cloud-webhook-coach" (default: "main")
  */
 export default {
   async fetch(request, env) {
@@ -55,8 +56,9 @@ export default {
 };
 
 async function triggerGitHubActions(env, activityId) {
+  const ref = env.GITHUB_REF || 'main';
   const res = await fetch(
-    `https://api.github.com/repos/${env.GITHUB_REPO}/dispatches`,
+    `https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/analyze-run.yml/dispatches`,
     {
       method: 'POST',
       headers: {
@@ -66,8 +68,8 @@ async function triggerGitHubActions(env, activityId) {
         'User-Agent':    'strava-coach-webhook/1.0'
       },
       body: JSON.stringify({
-        event_type:     'strava_activity',
-        client_payload: { activity_id: activityId }
+        ref,
+        inputs: { activity_id: activityId }
       })
     }
   );
