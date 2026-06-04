@@ -84,7 +84,7 @@ def load_vdot_table() -> str:
         return ""
     table = json.loads(path.read_text(encoding="utf-8"))
     # VDOT 48-58 relevant for this runner (current ~52, target ~57)
-    relevant = {k: v for k, v in table.items() if 48 <= int(k) <= 58}
+    relevant = {k: v for k, v in table.items() if k.isdigit() and 48 <= int(k) <= 58}
     return json.dumps(relevant, ensure_ascii=False)
 
 def load_user_profile() -> str:
