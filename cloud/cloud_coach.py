@@ -163,7 +163,7 @@ def build_activity_summary(activity: dict, recent: list) -> str:
 # ── Claude API ────────────────────────────────────────────────────────
 def ask_claude(system_prompt: str, user_message: str) -> str:
     payload = json.dumps({
-        "model":      "claude-haiku-4-5-20251001",
+        "model":      "claude-sonnet-4-5",
         "max_tokens": 800,
         "system":     system_prompt,
         "messages":   [{"role": "user", "content": user_message}],
