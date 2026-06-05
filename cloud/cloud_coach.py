@@ -53,16 +53,22 @@ def get_access_token() -> str:
         "refresh_token": STRAVA_REFRESH_TOKEN,
         "grant_type":    "refresh_token",
     }).encode()
-    req = urllib.request.Request(
-        "https://www.strava.com/oauth/token", data=data, method="POST"
-    )
-    try:
-        with urllib.request.urlopen(req) as r:
-            return json.loads(r.read())["access_token"]
-    except urllib.error.HTTPError as e:
-        body = e.read().decode(errors="replace")
-        print(f"Strava OAuth error {e.code}: {body}", file=sys.stderr)
-        raise
+
+    import time
+    for attempt in range(3):
+        req = urllib.request.Request(
+            "https://www.strava.com/oauth/token", data=data, method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req) as r:
+                return json.loads(r.read())["access_token"]
+        except urllib.error.HTTPError as e:
+            body = e.read().decode(errors="replace")
+            print(f"Strava OAuth error {e.code} (attempt {attempt+1}/3): {body[:200]}", file=sys.stderr)
+            if attempt < 2:
+                time.sleep(5 * (attempt + 1))  # 5s, 10s
+            else:
+                raise
 
 def strava_get(token: str, path: str):
     req = urllib.request.Request(
