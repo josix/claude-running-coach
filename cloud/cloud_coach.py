@@ -242,6 +242,11 @@ def main() -> None:
 
     sport = activity.get("sport_type") or activity.get("type") or ""
     is_run = sport in {"Run", "TrailRun", "VirtualRun"}
+    is_cross = sport in {"WeightTraining", "Hike", "Mountaineering"}
+
+    if not is_run and not is_cross:
+        print(f"Activity type {sport!r} not in scope, skipping.")
+        return
 
     since  = int((datetime.now(timezone.utc) - timedelta(days=28)).timestamp())
     recent = strava_get(token, f"/athlete/activities?after={since}&per_page=80")
