@@ -241,9 +241,7 @@ def main() -> None:
         return
 
     sport = activity.get("sport_type") or activity.get("type") or ""
-    if sport not in {"Run", "TrailRun", "VirtualRun"}:
-        print(f"Not a run ({sport}), skipping.")
-        return
+    is_run = sport in {"Run", "TrailRun", "VirtualRun"}
 
     since  = int((datetime.now(timezone.utc) - timedelta(days=28)).timestamp())
     recent = strava_get(token, f"/athlete/activities?after={since}&per_page=80")
@@ -253,7 +251,8 @@ def main() -> None:
     user_profile    = load_user_profile()
     activity_summary = build_activity_summary(activity, recent)
 
-    system_prompt = f"""你是一位專業的馬拉松跑步教練，專精 Jack Daniels VDOT 方法論和極化訓練（80/20）。
+    if is_run:
+        system_prompt = f"""你是一位專業的馬拉松跑步教練，專精 Jack Daniels VDOT 方法論和極化訓練（80/20）。
 
 以下是你的完整教練指引和方法論：
 {coach_md}
@@ -266,8 +265,18 @@ VDOT 配速表（VDOT 48-58）：
 
 請用繁體中文回覆。分析要具體、實用，聚焦在這次跑步的訓練意義和下一步建議。
 回覆格式：用 Markdown，總長度控制在 400 字以內。"""
+    else:
+        system_prompt = f"""你是一位專業的馬拉松跑步教練，同時了解交叉訓練對跑步表現的影響。
 
-    user_message = f"""請分析以下跑步活動，給出教練回饋：
+跑者個人資料：
+{user_profile}
+
+這位跑者目標是 2:50 雪梨馬拉松（2026/08/30）。
+請針對這次的交叉訓練活動（{sport}），分析它對馬拉松備賽的幫助和意義。
+請用繁體中文回覆。回覆格式：用 Markdown，總長度控制在 300 字以內。"""
+
+    if is_run:
+        user_message = f"""請分析以下跑步活動，給出教練回饋：
 
 {activity_summary}
 
@@ -276,6 +285,15 @@ VDOT 配速表（VDOT 48-58）：
 2. 心率和配速的關係分析
 3. 對 2:50 目標的影響
 4. 一個具體的下次訓練建議"""
+    else:
+        user_message = f"""請分析以下交叉訓練活動，從馬拉松備賽的角度給出回饋：
+
+{activity_summary}
+
+請包含：
+1. 這次交叉訓練對跑步體能的幫助（肌力、心肺、恢復等）
+2. 強度是否合適
+3. 建議的恢復方式或下一步"""
 
     print("Asking Claude for analysis...")
     analysis = ask_claude(system_prompt, user_message)
@@ -284,9 +302,10 @@ VDOT 配速表（VDOT 48-58）：
     print(analysis)
     print("─────────────")
 
-    name = activity.get("name", "跑步")
-    dist = activity["distance"] / 1000
-    msg  = f"🏃 *{name}* ({dist:.1f}km)\n\n{analysis}"
+    name = activity.get("name", "活動")
+    dist = activity.get("distance", 0) / 1000
+    icon = "🏃" if is_run else "💪"
+    msg  = f"{icon} *{name}*" + (f" ({dist:.1f}km)" if dist > 0 else "") + f"\n\n{analysis}"
 
     send_telegram(msg)
     print("✅ Sent to Telegram!")
