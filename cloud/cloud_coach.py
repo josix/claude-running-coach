@@ -80,7 +80,7 @@ def strava_get(token: str, path: str):
 
 # ── Repo context ──────────────────────────────────────────────────────
 def load_coach_context() -> str:
-    path = REPO_ROOT / "agents" / "coach.md"
+    path = REPO_ROOT / "cloud" / "coach_prompt.md"
     if path.exists():
         return path.read_text(encoding="utf-8")
     return ""
@@ -317,28 +317,20 @@ def main() -> None:
     activity_summary = build_activity_summary(activity, recent, laps)
 
     if is_run:
-        system_prompt = f"""你是一位專業的馬拉松跑步教練，專精 Jack Daniels VDOT 方法論和極化訓練（80/20）。
+        system_prompt = f"""{coach_md}
 
-以下是你的完整教練指引和方法論：
-{coach_md}
-
-VDOT 配速表（VDOT 48-58）：
+## VDOT 配速表（VDOT 48-58）
 {vdot_table}
 
-跑者個人資料：
-{user_profile}
-
-請用繁體中文回覆。分析要具體、實用，聚焦在這次跑步的訓練意義和下一步建議。
-回覆格式：用 Markdown，總長度控制在 400 字以內。"""
+## 跑者個人資料
+{user_profile}"""
     else:
-        system_prompt = f"""你是一位專業的馬拉松跑步教練，同時了解交叉訓練對跑步表現的影響。
+        system_prompt = f"""{coach_md}
 
-跑者個人資料：
+## 跑者個人資料
 {user_profile}
 
-這位跑者目標是 2:50 雪梨馬拉松（2026/08/30）。
-請針對這次的交叉訓練活動（{sport}），分析它對馬拉松備賽的幫助和意義。
-請用繁體中文回覆。回覆格式：用 Markdown，總長度控制在 300 字以內。"""
+這次是交叉訓練活動（{sport}），請從馬拉松備賽角度分析其幫助與意義。"""
 
     if is_run:
         user_message = f"""請分析以下跑步活動，給出教練回饋：
