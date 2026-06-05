@@ -110,8 +110,49 @@ def load_user_profile() -> str:
         "preferences": {"language": "zh-TW"}
     }, ensure_ascii=False)
 
+# ── Lap formatting ────────────────────────────────────────────────────
+def format_laps(laps: list) -> str:
+    if not laps:
+        return "- 無 lap 資料"
+    lines = []
+    for lap in laps:
+        d = lap.get("distance", 0)
+        if d < 100:  # skip sub-100m splits
+            continue
+        dist_km = d / 1000
+        pace    = lap.get("moving_time", 0) / d * 1000 if d else 0
+        hr      = lap.get("average_heartrate") or 0
+        idx     = lap.get("lap_index", len(lines) + 1)
+        line    = f"  Lap {idx}: {dist_km:.2f}km @ {fmt_pace(pace)}"
+        if hr:
+            line += f"  HR {hr:.0f}"
+        lines.append(line)
+    return "\n".join(lines) if lines else "- 無 lap 資料"
+
+def format_best_efforts(activity: dict) -> str:
+    efforts = activity.get("best_efforts", [])
+    if not efforts:
+        return ""
+    # Only show meaningful distances (≥1km)
+    keep = {"1000m", "1 mile", "2 mile", "5k", "10k", "Half-Marathon", "Marathon"}
+    lines = []
+    for e in efforts:
+        name = e.get("name", "")
+        if name not in keep:
+            continue
+        elapsed  = e.get("elapsed_time", 0)
+        pr_rank  = e.get("pr_rank")
+        date_str = (e.get("start_date_local") or "")[:10]
+        line     = f"  {name}: {fmt_duration(elapsed)}"
+        if date_str:
+            line += f"（{date_str}）"
+        if pr_rank == 1:
+            line += " 🏆 PR"
+        lines.append(line)
+    return "\n".join(lines)
+
 # ── Activity summary ──────────────────────────────────────────────────
-def build_activity_summary(activity: dict, recent: list) -> str:
+def build_activity_summary(activity: dict, recent: list, laps: list) -> str:
     dist  = activity["distance"] / 1000
     dur   = activity["moving_time"]
     pace  = dur / activity["distance"] * 1000 if activity["distance"] else 0
@@ -148,6 +189,16 @@ def build_activity_summary(activity: dict, recent: list) -> str:
         lines.append(f"- 平均心率：{hr:.0f} bpm（最高 {maxhr:.0f}）" if maxhr else f"- 平均心率：{hr:.0f} bpm")
     if elev >= 20:
         lines.append(f"- 爬升：{elev:.0f} m")
+
+    # Lap breakdown
+    if laps:
+        lines += ["", "## Lap 明細"]
+        lines.append(format_laps(laps))
+
+    # Best efforts in this activity (PR tracking)
+    best = format_best_efforts(activity)
+    if best:
+        lines += ["", "## 本次最佳成績（各距離）", best]
 
     lines += [
         "",
@@ -249,13 +300,21 @@ def main() -> None:
         print(f"Activity type {sport!r} not in scope, skipping.")
         return
 
-    since  = int((datetime.now(timezone.utc) - timedelta(days=28)).timestamp())
-    recent = strava_get(token, f"/athlete/activities?after={since}&per_page=80")
+    since  = int((datetime.now(timezone.utc) - timedelta(days=120)).timestamp())
+    recent = strava_get(token, f"/athlete/activities?after={since}&per_page=200")
+
+    # Fetch lap data (runs only — cross-training laps are not useful)
+    laps: list = []
+    if is_run:
+        try:
+            laps = strava_get(token, f"/activities/{ACTIVITY_ID}/laps")
+        except Exception as e:
+            print(f"Warning: could not fetch laps: {e}", file=sys.stderr)
 
     coach_md        = load_coach_context()
     vdot_table      = load_vdot_table()
     user_profile    = load_user_profile()
-    activity_summary = build_activity_summary(activity, recent)
+    activity_summary = build_activity_summary(activity, recent, laps)
 
     if is_run:
         system_prompt = f"""你是一位專業的馬拉松跑步教練，專精 Jack Daniels VDOT 方法論和極化訓練（80/20）。
@@ -288,9 +347,10 @@ VDOT 配速表（VDOT 48-58）：
 
 請包含：
 1. 這次訓練的強度評估（是否符合目標訓練區間）
-2. 心率和配速的關係分析
-3. 對 2:50 目標的影響
-4. 一個具體的下次訓練建議"""
+2. Lap 配速穩定度分析（如有 lap 資料）：前後段配速差、心率飄移
+3. 根據本次或近期最佳成績，估算目前 VDOT 值（請標明依據的距離/時間）
+4. 距離 2:50 雪梨馬拉松目標的差距評估
+5. 一個具體的下次訓練建議"""
     else:
         user_message = f"""請分析以下交叉訓練活動，從馬拉松備賽的角度給出回饋：
 
