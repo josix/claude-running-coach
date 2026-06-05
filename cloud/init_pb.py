@@ -183,9 +183,15 @@ def main() -> None:
         else:
             print(f"  {key}: no data")
 
+    pb_json_str = json.dumps(pb, ensure_ascii=False)
     print("\nWriting PB_JSON to GitHub Variable...")
-    update_github_variable("PB_JSON", json.dumps(pb, ensure_ascii=False))
-    print("✅ Done!")
+    try:
+        update_github_variable("PB_JSON", pb_json_str)
+        print("✅ Done!")
+    except Exception as e:
+        print(f"⚠️  Could not auto-write variable ({e}).")
+        print("Paste this value manually into GitHub → Settings → Variables → PB_JSON:")
+        print(pb_json_str)
 
 if __name__ == "__main__":
     main()
