@@ -177,6 +177,32 @@ def build_activity_summary(activity: dict, recent: list, laps: list) -> str:
         and a["distance"] >= 15000
     ][-5:]
 
+    # All activities in the last 120 days, newest first, skip current activity
+    current_id = activity.get("id")
+    run_types   = {"Run", "TrailRun", "VirtualRun"}
+    cross_types = {"WeightTraining", "Hike", "Mountaineering", "Swim", "Swimming"}
+    recent_all  = [
+        a for a in recent
+        if a.get("id") != current_id
+        and (a.get("sport_type") or a.get("type")) in (run_types | cross_types)
+    ]
+    recent_all.sort(key=lambda a: a["start_date"], reverse=True)
+
+    def fmt_recent(a: dict) -> str:
+        sport  = a.get("sport_type") or a.get("type") or ""
+        d      = a.get("distance", 0) / 1000
+        t      = a.get("moving_time", 0)
+        hr_avg = a.get("average_heartrate") or 0
+        label  = f"{a['start_date_local'][:10]} [{sport}]"
+        if d > 0.1:
+            pace_str = f" {d:.1f}km @ {fmt_pace(t / a['distance'] * 1000 if a['distance'] else 0)}"
+        else:
+            pace_str = f" {fmt_duration(t)}"
+        hr_str = f" HR {hr_avg:.0f}" if hr_avg else ""
+        return f"- {label}{pace_str}{hr_str}"
+
+    recent_lines = [fmt_recent(a) for a in recent_all[:30]]
+
     lines = [
         "## 活動資料",
         f"- 日期：{date}",
@@ -208,6 +234,12 @@ def build_activity_summary(activity: dict, recent: list, laps: list) -> str:
         "## 近期長跑（≥15km）",
     ]
     lines += [f"- {r}" for r in long_runs] if long_runs else ["- 近期無長跑記錄"]
+
+    lines += [
+        "",
+        "## 近四個月活動紀錄（最近 30 筆）",
+    ]
+    lines += recent_lines if recent_lines else ["- 無近期紀錄"]
 
     lines += [
         "",
