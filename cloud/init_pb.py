@@ -24,14 +24,6 @@ GITHUB_TOKEN         = os.environ["GITHUB_TOKEN"]
 GITHUB_REPO          = os.environ["GITHUB_REPO"]
 STRAVA_ATHLETE_ID    = 130655035
 
-# Distances that qualify for each PB category (in metres)
-PB_THRESHOLDS = {
-    "5k":   (4800,  6000),
-    "10k":  (9500,  11000),
-    "half": (20500, 22500),
-    "full": (41500, 43500),
-}
-
 # best_efforts name → PB key mapping
 EFFORT_NAME_MAP = {
     "5K":            "5k",
@@ -130,12 +122,11 @@ def main() -> None:
         if (a.get("sport_type") or a.get("type")) in run_types
         and a.get("athlete", {}).get("id") == STRAVA_ATHLETE_ID
     ]
-    print(f"Found {len(runs)} run activities, checking for qualifying distances...")
+    print(f"Found {len(runs)} run activities.")
 
-    # Filter to runs that could qualify for any PB category
-    min_qualifying = min(lo for lo, _ in PB_THRESHOLDS.values())
-    qualifying = [a for a in runs if a.get("distance", 0) >= min_qualifying]
-    print(f"{len(qualifying)} runs qualify for PB scan (≥{min_qualifying/1000:.0f}km)")
+    # Only fetch detail for runs where pr_count > 0 — these are the only ones that can contain PBs
+    qualifying = [a for a in runs if a.get("pr_count", 0) > 0]
+    print(f"{len(qualifying)} runs have pr_count > 0 — only fetching these for best_efforts")
 
     # Scan each qualifying activity for best_efforts
     pb: dict[str, dict] = {}
