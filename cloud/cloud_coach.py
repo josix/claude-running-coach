@@ -27,7 +27,16 @@ TELEGRAM_TOKEN       = os.environ["TELEGRAM_TOKEN"]
 TELEGRAM_CHAT_ID     = os.environ["TELEGRAM_CHAT_ID"]
 ANTHROPIC_API_KEY    = os.environ["ANTHROPIC_API_KEY"]
 ACTIVITY_ID          = os.environ.get("ACTIVITY_ID", "").strip()
+GITHUB_TOKEN         = os.environ.get("GITHUB_TOKEN", "")
+GITHUB_REPO          = os.environ.get("GITHUB_REPO", "")
 STRAVA_ATHLETE_ID    = 130655035  # Po-Han's athlete ID — reject activities from other athletes
+
+EFFORT_NAME_MAP = {
+    "5k":            "5k",
+    "10k":           "10k",
+    "Half-Marathon": "half",
+    "Marathon":      "full",
+}
 
 REPO_ROOT = Path(__file__).parent.parent
 
@@ -152,7 +161,7 @@ def format_best_efforts(activity: dict) -> str:
     return "\n".join(lines)
 
 # ── Activity summary ──────────────────────────────────────────────────
-def build_activity_summary(activity: dict, recent: list, laps: list) -> str:
+def build_activity_summary(activity: dict, recent: list, laps: list, pb: dict) -> str:
     dist  = activity["distance"] / 1000
     dur   = activity["moving_time"]
     pace  = dur / activity["distance"] * 1000 if activity["distance"] else 0
@@ -241,6 +250,9 @@ def build_activity_summary(activity: dict, recent: list, laps: list) -> str:
     ]
     lines += recent_lines if recent_lines else ["- 無近期紀錄"]
 
+    lines += ["", "## 全時個人最佳（PB）"]
+    lines.append(format_pb(pb))
+
     lines += [
         "",
         "## 比賽目標",
@@ -250,6 +262,99 @@ def build_activity_summary(activity: dict, recent: list, laps: list) -> str:
     ]
 
     return "\n".join(lines)
+
+# ── PB tracking ──────────────────────────────────────────────────────
+def load_pb() -> dict:
+    raw = os.environ.get("PB_JSON", "").strip()
+    if not raw:
+        return {}
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+
+def format_pb(pb: dict) -> str:
+    if not pb:
+        return "- 尚無記錄"
+    lines = []
+    labels = {"5k": "5K", "10k": "10K", "half": "半馬", "full": "全馬"}
+    for key in ["5k", "10k", "half", "full"]:
+        if key not in pb:
+            continue
+        s = pb[key]["time_sec"]
+        h, rem = divmod(s, 3600)
+        m, sec = divmod(rem, 60)
+        t = f"{h}:{m:02d}:{sec:02d}" if h else f"{m}:{sec:02d}"
+        lines.append(f"- {labels[key]}: {t}（{pb[key]['date']}）")
+    return "\n".join(lines) if lines else "- 尚無記錄"
+
+def update_pb_variable(pb: dict) -> None:
+    if not GITHUB_TOKEN or not GITHUB_REPO:
+        return
+    payload = json.dumps({"name": "PB_JSON", "value": json.dumps(pb, ensure_ascii=False)}).encode()
+    req = urllib.request.Request(
+        f"https://api.github.com/repos/{GITHUB_REPO}/actions/variables/PB_JSON",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {GITHUB_TOKEN}",
+            "Accept": "application/vnd.github+json",
+            "Content-Type": "application/json",
+        },
+        method="PATCH",
+    )
+    try:
+        with urllib.request.urlopen(req) as r:
+            r.read()
+        print("PB_JSON variable updated.")
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            # Variable doesn't exist yet — create it
+            req2 = urllib.request.Request(
+                f"https://api.github.com/repos/{GITHUB_REPO}/actions/variables",
+                data=payload,
+                headers={
+                    "Authorization": f"Bearer {GITHUB_TOKEN}",
+                    "Accept": "application/vnd.github+json",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req2) as r:
+                r.read()
+            print("PB_JSON variable created.")
+        else:
+            print(f"Warning: could not update PB_JSON: {e}", file=sys.stderr)
+
+def check_and_update_pb(activity: dict, pb: dict) -> tuple[dict, list[str]]:
+    """Check best_efforts for new PRs. Returns updated pb and list of PR descriptions."""
+    efforts = activity.get("best_efforts", [])
+    new_prs: list[str] = []
+    updated = False
+
+    for effort in efforts:
+        name    = effort.get("name", "")
+        key     = EFFORT_NAME_MAP.get(name)
+        pr_rank = effort.get("pr_rank")
+        elapsed = effort.get("elapsed_time", 0)
+        date    = (effort.get("start_date_local") or activity.get("start_date_local", ""))[:10]
+
+        if not key or not elapsed:
+            continue
+
+        is_new_pb = (key not in pb or elapsed < pb[key]["time_sec"])
+        if pr_rank == 1 or is_new_pb:
+            pb[key] = {"time_sec": elapsed, "date": date, "activity_id": activity.get("id")}
+            h, rem = divmod(elapsed, 3600)
+            m, sec = divmod(rem, 60)
+            t = f"{h}:{m:02d}:{sec:02d}" if h else f"{m}:{sec:02d}"
+            labels = {"5k": "5K", "10k": "10K", "half": "半馬", "full": "全馬"}
+            new_prs.append(f"{labels[key]} PB：{t}")
+            updated = True
+
+    if updated:
+        update_pb_variable(pb)
+
+    return pb, new_prs
 
 # ── Claude API ────────────────────────────────────────────────────────
 def ask_claude(system_prompt: str, user_message: str) -> str:
@@ -346,7 +451,14 @@ def main() -> None:
     coach_md        = load_coach_context()
     vdot_table      = load_vdot_table()
     user_profile    = load_user_profile()
-    activity_summary = build_activity_summary(activity, recent, laps)
+    pb              = load_pb()
+
+    # Check for PRs and update PB_JSON variable if needed (runs only)
+    new_prs: list[str] = []
+    if is_run:
+        pb, new_prs = check_and_update_pb(activity, pb)
+
+    activity_summary = build_activity_summary(activity, recent, laps, pb)
 
     if is_run:
         system_prompt = f"""{coach_md}
@@ -403,7 +515,8 @@ def main() -> None:
     name = activity.get("name", "活動")
     dist = activity.get("distance", 0) / 1000
     icon = "🏃" if is_run else "💪"
-    msg  = f"{icon} *{name}*" + (f" ({dist:.1f}km)" if dist > 0 else "") + f"\n\n{analysis}"
+    pr_banner = ("\n\n🏆 *新 PB！* " + "、".join(new_prs)) if new_prs else ""
+    msg  = f"{icon} *{name}*" + (f" ({dist:.1f}km)" if dist > 0 else "") + pr_banner + f"\n\n{analysis}"
 
     send_telegram(msg)
     print("✅ Sent to Telegram!")
