@@ -90,8 +90,9 @@ def load_vdot_table() -> str:
     if not path.exists():
         return ""
     table = json.loads(path.read_text(encoding="utf-8"))
-    # VDOT 48-58 relevant for this runner (current ~52, target ~57)
-    relevant = {k: v for k, v in table.items() if k.isdigit() and 48 <= int(k) <= 58}
+    rows = table.get("rows", [])
+    # VDOT 48-58 relevant for this runner (current ~50, target ~57)
+    relevant = [r for r in rows if isinstance(r, dict) and 48 <= r.get("vdot", 0) <= 58]
     return json.dumps(relevant, ensure_ascii=False)
 
 def load_user_profile() -> str:

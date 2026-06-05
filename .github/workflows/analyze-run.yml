@@ -27,6 +27,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Write users.json from secret
+        env:
+          USERS_JSON: ${{ secrets.USERS_JSON }}
+        run: echo "$USERS_JSON" > storage/users.json
+
       - name: Run coaching analysis
         env:
           STRAVA_CLIENT_ID:     ${{ secrets.STRAVA_CLIENT_ID }}
