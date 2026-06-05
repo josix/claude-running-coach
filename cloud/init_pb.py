@@ -34,8 +34,8 @@ PB_THRESHOLDS = {
 
 # best_efforts name → PB key mapping
 EFFORT_NAME_MAP = {
-    "5k":            "5k",
-    "10k":           "10k",
+    "5K":            "5k",
+    "10K":           "10k",
     "Half-Marathon": "half",
     "Marathon":      "full",
 }
@@ -150,6 +150,9 @@ def main() -> None:
             continue
 
         efforts = detail.get("best_efforts", [])
+        effort_names = [e.get("name") for e in efforts]
+        if effort_names:
+            print(f"    efforts: {effort_names}")
         for effort in efforts:
             name = effort.get("name", "")
             key  = EFFORT_NAME_MAP.get(name)

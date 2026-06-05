@@ -32,8 +32,8 @@ GITHUB_REPO          = os.environ.get("GITHUB_REPO", "")
 STRAVA_ATHLETE_ID    = 130655035  # Po-Han's athlete ID — reject activities from other athletes
 
 EFFORT_NAME_MAP = {
-    "5k":            "5k",
-    "10k":           "10k",
+    "5K":            "5k",
+    "10K":           "10k",
     "Half-Marathon": "half",
     "Marathon":      "full",
 }
