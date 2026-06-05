@@ -37,11 +37,37 @@ def _retry(fn, retries: int = 3, delay: int = 5):
         try:
             return fn()
         except urllib.error.HTTPError as e:
-            print(f"  HTTP {e.code} (attempt {attempt+1}/{retries})", file=sys.stderr)
-            if attempt < retries - 1:
-                time.sleep(delay)
+            if e.code == 429:
+                wait = 60 * 15  # Strava resets every 15 min
+                print(f"  Rate limited (429) — waiting {wait}s before retry {attempt+1}/{retries}", file=sys.stderr)
+                time.sleep(wait)
             else:
-                raise
+                print(f"  HTTP {e.code} (attempt {attempt+1}/{retries})", file=sys.stderr)
+                if attempt < retries - 1:
+                    time.sleep(delay)
+                else:
+                    raise
+
+def _check_rate_limit(headers) -> None:
+    """Read Strava rate limit headers and sleep if close to the limit."""
+    usage_raw = headers.get("X-RateLimit-Usage", "")
+    limit_raw = headers.get("X-RateLimit-Limit", "")
+    if not usage_raw or not limit_raw:
+        return
+    try:
+        short_usage = int(usage_raw.split(",")[0])
+        short_limit = int(limit_raw.split(",")[0])
+        pct = short_usage / short_limit
+        if pct >= 0.9:
+            wait = 60 * 15
+            print(f"  Rate limit at {short_usage}/{short_limit} ({pct:.0%}) — waiting {wait}s")
+            time.sleep(wait)
+        elif pct >= 0.75:
+            wait = 10
+            print(f"  Rate limit at {short_usage}/{short_limit} ({pct:.0%}) — slowing down {wait}s")
+            time.sleep(wait)
+    except (ValueError, IndexError):
+        pass
 
 def get_access_token() -> str:
     data = urllib.parse.urlencode({
@@ -65,6 +91,7 @@ def strava_get(token: str, path: str):
             headers={"Authorization": f"Bearer {token}"},
         )
         with urllib.request.urlopen(req) as r:
+            _check_rate_limit(r.headers)
             return json.loads(r.read())
     return _retry(_call)
 
