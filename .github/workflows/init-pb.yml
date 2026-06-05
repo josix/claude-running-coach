@@ -10,7 +10,6 @@ jobs:
 
     permissions:
       contents: read
-      variables: write
 
     steps:
       - uses: actions/checkout@v4
