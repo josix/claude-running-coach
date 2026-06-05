@@ -32,6 +32,17 @@ EFFORT_NAME_MAP = {
     "Marathon":      "full",
 }
 
+def _retry(fn, retries: int = 3, delay: int = 5):
+    for attempt in range(retries):
+        try:
+            return fn()
+        except urllib.error.HTTPError as e:
+            print(f"  HTTP {e.code} (attempt {attempt+1}/{retries})", file=sys.stderr)
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise
+
 def get_access_token() -> str:
     data = urllib.parse.urlencode({
         "client_id":     STRAVA_CLIENT_ID,
@@ -39,19 +50,23 @@ def get_access_token() -> str:
         "refresh_token": STRAVA_REFRESH_TOKEN,
         "grant_type":    "refresh_token",
     }).encode()
-    req = urllib.request.Request(
-        "https://www.strava.com/oauth/token", data=data, method="POST"
-    )
-    with urllib.request.urlopen(req) as r:
-        return json.loads(r.read())["access_token"]
+    def _call():
+        req = urllib.request.Request(
+            "https://www.strava.com/oauth/token", data=data, method="POST"
+        )
+        with urllib.request.urlopen(req) as r:
+            return json.loads(r.read())["access_token"]
+    return _retry(_call)
 
 def strava_get(token: str, path: str):
-    req = urllib.request.Request(
-        f"https://www.strava.com/api/v3{path}",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    with urllib.request.urlopen(req) as r:
-        return json.loads(r.read())
+    def _call():
+        req = urllib.request.Request(
+            f"https://www.strava.com/api/v3{path}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        with urllib.request.urlopen(req) as r:
+            return json.loads(r.read())
+    return _retry(_call)
 
 def fetch_all_activities(token: str, since_ts: int) -> list:
     """Paginate through all activities since timestamp."""
