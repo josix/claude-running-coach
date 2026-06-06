@@ -196,10 +196,6 @@ def build_activity_summary(activity: dict, recent: list, laps: list, pb: dict) -
         and (a.get("sport_type") or a.get("type")) in (run_types | cross_types)
     ]
     recent_all.sort(key=lambda a: a["start_date"], reverse=True)
-    if recent_all:
-        print(f"[DEBUG] recent_all top-5 (newest first): "
-              + ", ".join(f"{a.get('start_date_local','')[:10]}[{a.get('sport_type') or a.get('type')}]"
-                          for a in recent_all[:5]))
 
     def fmt_recent(a: dict) -> str:
         sport  = a.get("sport_type") or a.get("type") or ""
@@ -441,18 +437,7 @@ def main() -> None:
         print(f"Activity type {sport!r} not in scope, skipping.")
         return
 
-    since  = int((datetime.now(timezone.utc) - timedelta(days=120)).timestamp())
-    recent: list = []
-    page = 1
-    while True:
-        batch = strava_get(token, f"/athlete/activities?after={since}&per_page=200&page={page}")
-        if not batch:
-            break
-        recent.extend(batch)
-        if len(batch) < 200:
-            break
-        page += 1
-    print(f"[DEBUG] Strava returned {len(recent)} activities total ({page} page(s), last 120 days)")
+    recent = strava_get(token, "/athlete/activities?per_page=100")
 
     # Fetch lap data (runs only — cross-training laps are not useful)
     laps: list = []
