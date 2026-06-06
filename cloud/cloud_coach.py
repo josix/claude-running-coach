@@ -360,7 +360,7 @@ def check_and_update_pb(activity: dict, pb: dict) -> tuple[dict, list[str]]:
 def ask_claude(system_prompt: str, user_message: str) -> str:
     payload = json.dumps({
         "model":      "claude-sonnet-4-5",
-        "max_tokens": 700,
+        "max_tokens": 2048,
         "system":     system_prompt,
         "messages":   [{"role": "user", "content": user_message}],
     }).encode()
