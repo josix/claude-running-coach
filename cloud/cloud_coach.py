@@ -210,7 +210,7 @@ def build_activity_summary(activity: dict, recent: list, laps: list, pb: dict) -
         hr_str = f" HR {hr_avg:.0f}" if hr_avg else ""
         return f"- {label}{pace_str}{hr_str}"
 
-    recent_lines = [fmt_recent(a) for a in recent_all[:30]]
+    recent_lines = [fmt_recent(a) for a in recent_all]
 
     lines = [
         "## 活動資料",
@@ -246,7 +246,7 @@ def build_activity_summary(activity: dict, recent: list, laps: list, pb: dict) -
 
     lines += [
         "",
-        "## 近四個月活動紀錄（最近 30 筆）",
+        "## 近期活動紀錄（最近 100 筆）",
     ]
     lines += recent_lines if recent_lines else ["- 無近期紀錄"]
 
