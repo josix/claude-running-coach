@@ -196,6 +196,10 @@ def build_activity_summary(activity: dict, recent: list, laps: list, pb: dict) -
         and (a.get("sport_type") or a.get("type")) in (run_types | cross_types)
     ]
     recent_all.sort(key=lambda a: a["start_date"], reverse=True)
+    if recent_all:
+        print(f"[DEBUG] recent_all top-5 (newest first): "
+              + ", ".join(f"{a.get('start_date_local','')[:10]}[{a.get('sport_type') or a.get('type')}]"
+                          for a in recent_all[:5]))
 
     def fmt_recent(a: dict) -> str:
         sport  = a.get("sport_type") or a.get("type") or ""
@@ -360,7 +364,7 @@ def check_and_update_pb(activity: dict, pb: dict) -> tuple[dict, list[str]]:
 def ask_claude(system_prompt: str, user_message: str) -> str:
     payload = json.dumps({
         "model":      "claude-sonnet-4-5",
-        "max_tokens": 1024,
+        "max_tokens": 700,
         "system":     system_prompt,
         "messages":   [{"role": "user", "content": user_message}],
     }).encode()
@@ -487,24 +491,15 @@ def main() -> None:
 這次是交叉訓練活動（{sport}），請從馬拉松備賽角度分析其幫助與意義。"""
 
     if is_run:
-        user_message = f"""請分析以下跑步活動，給出教練回饋：
+        user_message = f"""請分析以下跑步活動，給出教練回饋。**請以 500 字以內的繁體中文精簡回覆**：
 
 {activity_summary}
 
 請依序包含：
-1. **近期訓練脈絡**（先從四個月活動紀錄判斷）：
-   - 本週目前跑量 vs 前三週平均週跑量，是否突增 >10%？
-   - 最近 14 天質量課（T/I/R）次數，是否超過 80/20 原則？
-   - 這次活動前 48 小時有無高強度課？連續疲勞風險？
-2. **訓練類型判定**（根據 lap 配速分布推斷）：
-   - 輕鬆跑、節奏跑、間歇、長跑、馬拉松配速跑
-3. **依訓練類型對症分析**：
-   - 間歇 → 快速段是否達目標配速？恢復段心率是否降下來？
-   - 節奏跑 → 配速是否維持在目標區間？後段崩速了嗎？
-   - 輕鬆跑 → 心率是否控制在 Zone 2 以內？
-4. 根據本次或近期最佳成績，估算目前 VDOT（標明依據距離/時間）
-5. 距離 2:50 雪梨馬拉松目標的差距評估
-6. 一個具體的下次訓練建議"""
+1. 近期訓練脈絡（週跑量趨勢、14天質量課比例、48小時疲勞風險）
+2. 訓練類型判定（輕鬆/節奏/間歇/長跑）與執行品質
+3. 當前 VDOT 估算（標明依據）
+4. 一個具體的下次訓練建議"""
     else:
         user_message = f"""請分析以下交叉訓練活動，從馬拉松備賽的角度給出回饋：
 
