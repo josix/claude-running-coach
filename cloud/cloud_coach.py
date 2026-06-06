@@ -179,29 +179,12 @@ def build_activity_summary(activity: dict, recent: list, laps: list, pb: dict) -
         and datetime.strptime(a["start_date"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc) >= start
     )
 
-    run_activities = [
-        a for a in recent
-        if (a.get("sport_type") or a.get("type")) in {"Run", "TrailRun", "VirtualRun"}
-        and a.get("id") != activity.get("id")
-    ]
-    long_runs_raw = [a for a in run_activities if a["distance"] >= 15000][-5:]
-    current_date  = datetime.strptime(date, "%Y-%m-%d").date()
-
-    def days_ago(a: dict) -> int:
-        d = (a.get("start_date_local") or a.get("start_date", ""))[:10]
-        try:
-            return (current_date - datetime.strptime(d, "%Y-%m-%d").date()).days
-        except ValueError:
-            return -1
-
     long_runs = [
-        f"{a['start_date_local'][:10]}（{days_ago(a)}天前）: {a['distance']/1000:.1f}km @ {fmt_pace(a['moving_time']/a['distance']*1000 if a['distance'] else 0)}"
-        for a in long_runs_raw
-    ]
-
-    # Days since last any run (excluding current)
-    last_run = next((a for a in reversed(run_activities)), None)
-    days_since_run = days_ago(last_run) if last_run else None
+        f"{a['start_date_local'][:10]}: {a['distance']/1000:.1f}km @ {fmt_pace(a['moving_time']/a['distance']*1000 if a['distance'] else 0)}"
+        for a in recent
+        if (a.get("sport_type") or a.get("type")) in {"Run", "TrailRun", "VirtualRun"}
+        and a["distance"] >= 15000
+    ][-5:]
 
     # All activities in the last 120 days, newest first, skip current activity
     current_id = activity.get("id")
@@ -256,14 +239,12 @@ def build_activity_summary(activity: dict, recent: list, laps: list, pb: dict) -
     if best:
         lines += ["", "## 本次最佳成績（各距離）", best]
 
-    gap_str = f"距上次跑步：{days_since_run} 天前" if days_since_run is not None else "距上次跑步：不明"
     lines += [
         "",
         "## 本週訓練",
         f"- 本週累計：{weekly_km:.1f} km",
-        f"- {gap_str}",
         "",
-        "## 近期長跑（≥15km，含距今天數）",
+        "## 近期長跑（≥15km）",
     ]
     lines += [f"- {r}" for r in long_runs] if long_runs else ["- 近期無長跑記錄"]
 
