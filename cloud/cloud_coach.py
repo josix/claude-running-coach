@@ -179,12 +179,29 @@ def build_activity_summary(activity: dict, recent: list, laps: list, pb: dict) -
         and datetime.strptime(a["start_date"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc) >= start
     )
 
-    long_runs = [
-        f"{a['start_date_local'][:10]}: {a['distance']/1000:.1f}km @ {fmt_pace(a['moving_time']/a['distance']*1000 if a['distance'] else 0)}"
-        for a in recent
+    run_activities = [
+        a for a in recent
         if (a.get("sport_type") or a.get("type")) in {"Run", "TrailRun", "VirtualRun"}
-        and a["distance"] >= 15000
-    ][-5:]
+        and a.get("id") != activity.get("id")
+    ]
+    long_runs_raw = [a for a in run_activities if a["distance"] >= 15000][-5:]
+    current_date  = datetime.strptime(date, "%Y-%m-%d").date()
+
+    def days_ago(a: dict) -> int:
+        d = (a.get("start_date_local") or a.get("start_date", ""))[:10]
+        try:
+            return (current_date - datetime.strptime(d, "%Y-%m-%d").date()).days
+        except ValueError:
+            return -1
+
+    long_runs = [
+        f"{a['start_date_local'][:10]}（{days_ago(a)}天前）: {a['distance']/1000:.1f}km @ {fmt_pace(a['moving_time']/a['distance']*1000 if a['distance'] else 0)}"
+        for a in long_runs_raw
+    ]
+
+    # Days since last any run (excluding current)
+    last_run = next((a for a in reversed(run_activities)), None)
+    days_since_run = days_ago(last_run) if last_run else None
 
     # All activities in the last 120 days, newest first, skip current activity
     current_id = activity.get("id")
@@ -239,12 +256,14 @@ def build_activity_summary(activity: dict, recent: list, laps: list, pb: dict) -
     if best:
         lines += ["", "## 本次最佳成績（各距離）", best]
 
+    gap_str = f"距上次跑步：{days_since_run} 天前" if days_since_run is not None else "距上次跑步：不明"
     lines += [
         "",
         "## 本週訓練",
         f"- 本週累計：{weekly_km:.1f} km",
+        f"- {gap_str}",
         "",
-        "## 近期長跑（≥15km）",
+        "## 近期長跑（≥15km，含距今天數）",
     ]
     lines += [f"- {r}" for r in long_runs] if long_runs else ["- 近期無長跑記錄"]
 
@@ -491,15 +510,17 @@ def main() -> None:
 這次是交叉訓練活動（{sport}），請從馬拉松備賽角度分析其幫助與意義。"""
 
     if is_run:
-        user_message = f"""請分析以下跑步活動，給出教練回饋。**請以 500 字以內的繁體中文精簡回覆**：
+        user_message = f"""請分析以下跑步活動，給出教練回饋。**全文請控制在 500 字以內，每點 1-2 句**：
 
 {activity_summary}
 
-請依序包含：
-1. 近期訓練脈絡（週跑量趨勢、14天質量課比例、48小時疲勞風險）
-2. 訓練類型判定（輕鬆/節奏/間歇/長跑）與執行品質
-3. 當前 VDOT 估算（標明依據）
-4. 一個具體的下次訓練建議"""
+請依序包含（每點 1-2 句，簡潔有力）：
+1. **近期訓練脈絡**：本週跑量 vs 前三週平均是否突增 >10%？最近 14 天質量課比例是否超過 80/20？前 48 小時有無高強度課？
+2. **訓練類型判定**：根據 lap 配速分布推斷（輕鬆跑／節奏跑／間歇／長跑／MP 跑）
+3. **執行品質**：配速穩定性、心率漂移、後段崩速狀況
+4. **VDOT 估算**：根據本次或近期最佳成績估算（標明依據距離/時間）
+5. **與 2:50 目標差距**：一句話評估
+6. **下次訓練建議**：一個具體動作"""
     else:
         user_message = f"""請分析以下交叉訓練活動，從馬拉松備賽的角度給出回饋：
 
