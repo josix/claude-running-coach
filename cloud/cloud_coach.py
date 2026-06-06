@@ -438,17 +438,17 @@ def main() -> None:
         return
 
     since  = int((datetime.now(timezone.utc) - timedelta(days=120)).timestamp())
-    recent = strava_get(token, f"/athlete/activities?after={since}&per_page=200")
-
-    # ── Debug: show what Strava returned ─────────────────────────────
-    print(f"[DEBUG] Strava returned {len(recent)} activities (last 120 days, up to 200)")
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).strftime("%Y-%m-%d")
-    recent_14d = [a for a in recent if a.get("start_date_local", "")[:10] >= cutoff]
-    print(f"[DEBUG] Activities in last 14 days: {len(recent_14d)}")
-    for a in sorted(recent_14d, key=lambda x: x.get("start_date_local", ""), reverse=True):
-        print(f"  {a.get('start_date_local','')[:10]} [{a.get('sport_type') or a.get('type')}] "
-              f"{a.get('distance',0)/1000:.1f}km  id={a.get('id')}")
-    # ─────────────────────────────────────────────────────────────────
+    recent: list = []
+    page = 1
+    while True:
+        batch = strava_get(token, f"/athlete/activities?after={since}&per_page=200&page={page}")
+        if not batch:
+            break
+        recent.extend(batch)
+        if len(batch) < 200:
+            break
+        page += 1
+    print(f"[DEBUG] Strava returned {len(recent)} activities total ({page} page(s), last 120 days)")
 
     # Fetch lap data (runs only — cross-training laps are not useful)
     laps: list = []
