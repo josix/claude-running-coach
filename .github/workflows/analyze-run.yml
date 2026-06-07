@@ -1,0 +1,54 @@
+name: Analyze Strava Run
+
+on:
+  repository_dispatch:
+    types: [strava_activity]   # triggered by Cloudflare Worker
+  workflow_dispatch:
+    inputs:
+      activity_id:
+        description: 'Strava Activity ID (for manual test)'
+        required: true
+
+# Prevent parallel spam: queue at most 1 pending run, cancel older ones
+concurrency:
+  group: strava-coach
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Write users.json from secret
+        env:
+          USERS_JSON: ${{ secrets.USERS_JSON }}
+        run: echo "$USERS_JSON" > storage/users.json
+
+      - name: Run coaching analysis
+        env:
+          STRAVA_CLIENT_ID:     ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
+          TELEGRAM_TOKEN:       ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID:     ${{ secrets.TELEGRAM_CHAT_ID }}
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN:         ${{ secrets.GH_PAT }}
+          GITHUB_REPO:          ${{ github.repository }}
+          PB_JSON:              ${{ vars.PB_JSON }}
+          ACTIVITY_ID: >-
+            ${{
+              github.event.client_payload.activity_id ||
+              github.event.inputs.activity_id
+            }}
+        run: python cloud/cloud_coach.py

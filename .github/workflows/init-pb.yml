@@ -1,0 +1,29 @@
+name: Initialize PB Records
+
+on:
+  workflow_dispatch:
+
+jobs:
+  init-pb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Scan 2 years of Strava activities and write PB_JSON
+        env:
+          STRAVA_CLIENT_ID:     ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
+          GITHUB_TOKEN:         ${{ secrets.GH_PAT }}
+          GITHUB_REPO:          ${{ github.repository }}
+        run: python cloud/init_pb.py
